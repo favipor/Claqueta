@@ -46,7 +46,7 @@ export function TrackPanel({
 
   function save(patch: Parameters<typeof updateEntry>[0]["patch"], after?: () => void) {
     startTransition(async () => {
-      const res = await updateEntry({
+      await updateEntry({
         tmdb_id: tmdbId,
         media_type: mediaType,
         title,
@@ -54,7 +54,6 @@ export function TrackPanel({
         patch,
       });
       after?.();
-      return res;
     });
   }
 
