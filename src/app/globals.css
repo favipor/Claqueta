@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-fg: 15 118 110; /* teal-700 sobre fondo claro */
+  --shadow-hover: 0 18px 32px -8px rgb(0 0 0 / 0.5), 0 6px 12px -4px rgb(0 0 0 / 0.3);
+}
+
+.dark {
+  --brand-fg: 45 212 191; /* teal-400 sobre fondo oscuro */
+  --shadow-hover: 0 0 30px 3px rgb(255 255 255 / 0.28), 0 0 8px 0 rgb(255 255 255 / 0.2);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
+}
+
+/* ---------- Logo: la tapa de la claqueta da dos "claps" ---------- */
+@keyframes clap {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-26deg);
+  }
+  38% {
+    transform: rotate(0deg);
+  }
+  58% {
+    transform: rotate(-18deg);
+  }
+  76% {
+    transform: rotate(0deg);
+  }
+}
+
+.logo-link:hover .clap-stick,
+.clap-active .clap-stick {
+  animation: clap 0.9s ease-in-out;
+}
+
+.clap-active .clap-stick {
+  animation-delay: 0.3s;
+}
+
+/* ---------- Intro de bienvenida ---------- */
+.splash-overlay {
+  display: none;
+}
+
+html[data-splash="1"] .splash-overlay {
+  display: flex;
+  /* Red de seguridad: si algo fallara, la intro se oculta sola a los 5 s */
+  animation: splash-failsafe 0.3s ease 5s forwards;
+}
+
+@keyframes splash-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* ---------- Fondo de carátulas de la portada ---------- */
+@keyframes marquee-up {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes marquee-down {
+  from {
+    transform: translateY(-50%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.marquee-up {
+  animation: marquee-up linear infinite;
+}
+
+.marquee-down {
+  animation: marquee-down linear infinite;
+}
+
+/* ---------- Utilidades ---------- */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------- Accesibilidad: reducir movimiento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .marquee-up,
+  .marquee-down,
+  .clap-stick {
+    animation: none !important;
+  }
+}
+
+/* ---------- Panel de accesibilidad ---------- */
+html.a11y-dyslexia body {
+  font-family: var(--font-lexend), "Comic Sans MS", system-ui, sans-serif !important;
+  letter-spacing: 0.03em;
+  word-spacing: 0.12em;
+  line-height: 1.7;
+}
+
+html.a11y-underline a {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+html.a11y-contrast .text-neutral-400,
+html.a11y-contrast .text-neutral-500,
+html.a11y-contrast .text-neutral-600 {
+  color: rgb(10 10 10) !important;
+}
+html.a11y-contrast.dark .text-neutral-400,
+html.a11y-contrast.dark .text-neutral-500,
+html.a11y-contrast.dark .text-neutral-600 {
+  color: rgb(250 250 250) !important;
+}
+html.a11y-contrast [class*="border-neutral"] {
+  border-color: rgb(82 82 82) !important;
+}
+html.a11y-contrast.dark [class*="border-neutral"] {
+  border-color: rgb(212 212 212) !important;
+}
+html.a11y-contrast :focus-visible {
+  outline: 3px solid #f59e0b !important;
+  outline-offset: 2px;
+}
+
+html.a11y-motion {
+  scroll-behavior: auto;
+}
+html.a11y-motion *,
+html.a11y-motion *::before,
+html.a11y-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+html.a11y-motion .marquee-up,
+html.a11y-motion .marquee-down,
+html.a11y-motion .clap-stick {
+  animation: none !important;
+}
