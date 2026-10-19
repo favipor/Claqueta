@@ -85,3 +85,22 @@ export function MessageIcon({ className }: P) {
     </Svg>
   );
 }
+
+export function UsersIcon({ className }: P) {
+  return (
+    <Svg className={className}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </Svg>
+  );
+}
+
+export function BookIcon({ className }: P) {
+  return (
+    <Svg className={className}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+    </Svg>
+  );
+}

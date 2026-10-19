@@ -61,12 +61,20 @@ export default async function NotificationsPage() {
         ? { id: a.id, username: a.username, name: a.display_name ?? a.username, avatarUrl: a.avatar_url }
         : null,
       titleName: names.get(key) ?? null,
+      // Al pulsar el aviso: perfil (seguidores), chat (mensajes) o la conversación del título (respuestas y menciones)
       href:
-        (n.type === "message" || n.type === "recommendation") && a?.username
-          ? `/mensajes/${a.username}`
-          : n.tmdb_id && n.media_type
-            ? `/titulo/${n.media_type}/${n.tmdb_id}`
-            : null,
+        n.type === "message" || n.type === "recommendation"
+          ? a?.username
+            ? `/mensajes/${a.username}`
+            : null
+          : n.type === "reply" || n.type === "mention"
+            ? n.tmdb_id && n.media_type
+              ? `/titulo/${n.media_type}/${n.tmdb_id}#conversacion`
+              : null
+            : a?.username
+              ? `/u/${a.username}`
+              : null,
+      titleHref: n.tmdb_id && n.media_type ? `/titulo/${n.media_type}/${n.tmdb_id}` : null,
       requestOpen: n.type === "follow_request" && !!n.actor_id && pendingSet.has(n.actor_id as string),
     };
   });

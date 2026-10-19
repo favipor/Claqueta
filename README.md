@@ -19,6 +19,7 @@ Web para llevar el seguimiento de películas y series (datos de TMDB), con login
    luego con `supabase/phase4.sql` (conversaciones, denuncias y administrador)
    luego con `supabase/phase5.sql` (listas, notificaciones y bloqueo de personas)
    y por último con `supabase/phase5b.sql` (mensajes privados y recomendaciones).
+   y `supabase/phase7.sql` (descubrir gente afín y panel de administración de usuarios).
    Opcional para probar: `supabase/demo_bot.sql` crea dos personas falsas (se borran con `select demo_cleanup();`).
 5. Arranca la web:
    ```

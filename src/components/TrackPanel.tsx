@@ -4,11 +4,11 @@ import { useState, useTransition } from "react";
 import { updateEntry } from "@/app/actions";
 import { STATUSES, type Status } from "@/lib/dict";
 import type { MediaType } from "@/lib/tmdb";
+import { StarRating } from "./StarRating";
 import { useI18n } from "./I18nProvider";
 
 type Initial = { status: Status | null; rating: number | null; private_note: string | null };
 
-const RATINGS = Array.from({ length: 21 }, (_, i) => i / 2); // 0, 0.5, 1 ... 10
 
 const activeColor: Record<Status, string> = {
   pendiente: "bg-orange-500 text-white border-orange-500",
@@ -67,12 +67,6 @@ export function TrackPanel({
     save({ status: next });
   }
 
-  function onRating(value: string) {
-    const next = value === "" ? null : Number(value);
-    setRating(next);
-    save({ rating: next });
-  }
-
   function onSaveNote() {
     setNoteState("saving");
     save({ private_note: note }, () => {
@@ -107,22 +101,16 @@ export function TrackPanel({
       </div>
 
       <div>
-        <label htmlFor="rating" className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">
+        <h2 className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">
           {t("detail.myRating")}
-        </label>
-        <select
-          id="rating"
-          value={rating ?? ""}
-          onChange={(e) => onRating(e.target.value)}
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
-        >
-          <option value="">{t("detail.noRating")}</option>
-          {RATINGS.map((r) => (
-            <option key={r} value={r}>
-              {r.toString().replace(".", ",")}
-            </option>
-          ))}
-        </select>
+        </h2>
+        <StarRating
+          value={rating}
+          onChange={(v) => {
+            setRating(v);
+            save({ rating: v });
+          }}
+        />
       </div>
 
       <div>

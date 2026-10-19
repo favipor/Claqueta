@@ -1,10 +1,20 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { AdminUsers, type AdminStats, type AdminUserRow } from "@/components/AdminUsers";
 import { AdminPanel, type BlockedItem, type ReportItem } from "@/components/AdminPanel";
 
 export const metadata = { title: "Admin · Claqueta" };
 
-export default async function AdminPage() {
+const PAGE_SIZE = 20;
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; pagina?: string }>;
+}) {
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim().slice(0, 80);
+  const page = Math.max(1, Number.parseInt(sp.pagina ?? "1", 10) || 1);
   const supabase = await createClient();
   const {
     data: { user },
@@ -80,5 +90,28 @@ export default async function AdminPage() {
     };
   });
 
-  return <AdminPanel reports={reports} blocked={blocked} />;
+  // Usuarios registrados (solo disponible si se ha ejecutado phase7.sql)
+  const [{ data: statsData }, { data: usersData }] = await Promise.all([
+    supabase.rpc("admin_stats"),
+    supabase.rpc("admin_users", { p_q: q, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE }),
+  ]);
+  const userRows = (usersData ?? []) as (AdminUserRow & { total: number })[];
+  const total = Number(userRows[0]?.total ?? 0);
+
+  return (
+    <div className="space-y-10">
+      {statsData || userRows.length > 0 ? (
+        <AdminUsers
+          stats={(statsData ?? null) as AdminStats | null}
+          users={userRows.map((u) => ({ ...u, titles: Number(u.titles), comments: Number(u.comments) }))}
+          total={total}
+          me={user.id}
+          q={q}
+          page={page}
+          pageSize={PAGE_SIZE}
+        />
+      ) : null}
+      <AdminPanel reports={reports} blocked={blocked} />
+    </div>
+  );
 }

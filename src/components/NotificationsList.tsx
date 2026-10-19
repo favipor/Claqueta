@@ -17,6 +17,7 @@ export type NotifItem = {
   actor: { id: string; username: string | null; name: string; avatarUrl: string | null } | null;
   titleName: string | null;
   href: string | null;
+  titleHref: string | null;
   requestOpen: boolean;
 };
 
@@ -74,14 +75,14 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
           return (
             <li
               key={n.id}
-              className={`flex flex-wrap items-center gap-3 rounded-2xl border p-3 ${
+              className={`group relative flex flex-wrap items-center gap-3 rounded-2xl border p-3 transition hover:-translate-y-0.5 hover:shadow-hover ${
                 n.unread
                   ? "border-brand/40 bg-brand/5"
                   : "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
               }`}
             >
               {n.actor?.username ? (
-                <Link href={`/u/${n.actor.username}`} aria-label={who}>
+                <Link href={`/u/${n.actor.username}`} aria-label={who} className="relative z-10">
                   <Avatar url={n.actor.avatarUrl} size={42} />
                 </Link>
               ) : (
@@ -89,8 +90,11 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
               )}
               <div className="min-w-0 flex-1 text-sm">
                 <p>
-                  {n.actor?.username ? (
-                    <Link href={`/u/${n.actor.username}`} className="font-semibold hover:underline">
+                  {n.href ? (
+                    <Link
+                      href={n.href}
+                      className="font-semibold after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-fg"
+                    >
                       {who}
                     </Link>
                   ) : (
@@ -100,8 +104,8 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
                   {n.titleName && (
                     <>
                       {" "}
-                      {n.href ? (
-                        <Link href={n.href} className="font-semibold text-brand-fg hover:underline">
+                      {n.titleHref ? (
+                        <Link href={n.titleHref} className="relative z-10 font-semibold text-brand-fg hover:underline">
                           {n.titleName}
                         </Link>
                       ) : (
@@ -114,7 +118,7 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
               </div>
               {n.unread && <span className="h-2.5 w-2.5 rounded-full bg-red-500" aria-label={t("notif.aria")} />}
               {n.type === "follow_request" && n.requestOpen && !res && (
-                <div className="flex gap-2">
+                <div className="relative z-10 flex gap-2">
                   <button
                     type="button"
                     disabled={busy}

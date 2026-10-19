@@ -5,12 +5,15 @@ import { getT } from "@/lib/i18n-server";
 import { TitleCard } from "@/components/TitleCard";
 import { STATUSES, type Status } from "@/lib/dict";
 import { getTvSeasons, type TvSeason } from "@/lib/tmdb";
+import { ListControls } from "@/components/ListControls";
+import { SORTS, type Sort } from "@/lib/list-sort";
+import { genreName } from "@/lib/genres";
 import { readWatchedForTitles } from "@/lib/tv-state";
 
 export default async function MyListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; tipo?: string }>;
+  searchParams: Promise<{ estado?: string; tipo?: string; orden?: string; genero?: string }>;
 }) {
   const sp = await searchParams;
   const { t } = await getT();
@@ -24,14 +27,44 @@ export default async function MyListPage({
   const estado = STATUSES.includes(sp.estado as Status) ? (sp.estado as Status) : null;
   const tipo = sp.tipo === "movie" || sp.tipo === "tv" ? sp.tipo : null;
 
+  const orden: Sort = SORTS.includes(sp.orden as Sort) ? (sp.orden as Sort) : "reciente";
+  const genero = /^\d+$/.test(sp.genero ?? "") ? Number(sp.genero) : null;
+
   let query = supabase
     .from("user_titles")
-    .select("tmdb_id, media_type, title, poster_path, status, rating, updated_at")
+    .select("tmdb_id, media_type, title, poster_path, status, rating, updated_at, runtime_min, genres")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
   if (estado) query = query.eq("status", estado);
   if (tipo) query = query.eq("media_type", tipo);
-  const { data: rows } = await query;
+  const { data: allRows } = await query;
+
+  // Géneros presentes en tu lista (antes de filtrar por género) y orden elegido
+  const genreIds = new Set<number>();
+  for (const r of allRows ?? []) for (const g of (r.genres as number[] | null) ?? []) genreIds.add(g);
+  const { lang: uiLang } = await getT();
+  const genreOptions = [...genreIds]
+    .map((id) => ({ id, name: genreName(id, uiLang) }))
+    .sort((a, b) => a.name.localeCompare(b.name, uiLang));
+
+  const rows = (allRows ?? [])
+    .filter((r) => genero === null || ((r.genres as number[] | null) ?? []).includes(genero))
+    .sort((a, b) => {
+      const ra = a.rating === null ? null : Number(a.rating);
+      const rb = b.rating === null ? null : Number(b.rating);
+      switch (orden) {
+        case "nota_alta":
+          return (rb ?? -1) - (ra ?? -1);
+        case "nota_baja":
+          return (ra ?? 99) - (rb ?? 99);
+        case "titulo":
+          return String(a.title).localeCompare(String(b.title), uiLang);
+        case "duracion":
+          return ((b.runtime_min as number | null) ?? -1) - ((a.runtime_min as number | null) ?? -1);
+        default:
+          return String(b.updated_at).localeCompare(String(a.updated_at));
+      }
+    });
 
   // Barra de progreso para las series que estás viendo.
   const progress = new Map<number, { value: number; total: number; label: string }>();
@@ -72,6 +105,8 @@ export default async function MyListPage({
     const q = new URLSearchParams();
     if (e) q.set("estado", e);
     if (ty) q.set("tipo", ty);
+    if (orden !== "reciente") q.set("orden", orden);
+    if (genero) q.set("genero", String(genero));
     const s = q.toString();
     return `/mi-lista${s ? `?${s}` : ""}`;
   };
@@ -87,12 +122,21 @@ export default async function MyListPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">{t("list.title")}</h1>
-        <Link
-          href="/importar"
-          className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-hover dark:border-neutral-700 dark:hover:bg-neutral-800"
-        >
-          {t("imp.link")}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/importar"
+            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-hover dark:border-neutral-700 dark:hover:bg-neutral-800"
+          >
+            {t("imp.link")}
+          </Link>
+          <a
+            href="/api/exportar"
+            download
+            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-hover dark:border-neutral-700 dark:hover:bg-neutral-800"
+          >
+            {t("list.export")}
+          </a>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -119,8 +163,12 @@ export default async function MyListPage({
         </nav>
       </div>
 
-      {!rows || rows.length === 0 ? (
-        <p className="py-10 text-center text-neutral-500">{t("list.empty")}</p>
+      <ListControls estado={estado} tipo={tipo} orden={orden} genero={genero} genres={genreOptions} />
+
+      {rows.length === 0 ? (
+        <p className="py-10 text-center text-neutral-500">
+          {(allRows ?? []).length === 0 ? t("list.empty") : t("list.noMatch")}
+        </p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {rows.map((r, i) => (

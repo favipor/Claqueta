@@ -34,7 +34,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <Navbar />
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
           <footer className="border-t border-neutral-200 px-4 py-6 text-center text-xs text-neutral-500 dark:border-neutral-800">
-            <p>{t("footer.tmdb")}</p>
+            <p>
+              <a href="/guia" className="font-semibold underline-offset-2 hover:underline">
+                {t("footer.guide")}
+              </a>
+            </p>
+            <p className="mt-1">{t("footer.tmdb")}</p>
             <p className="mt-1">Claqueta · {t("app.tagline")}</p>
           </footer>
           <A11yPanel />

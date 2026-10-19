@@ -377,3 +377,81 @@ export async function getDetail(
     kind,
   };
 }
+
+// ---------------------------------------------------------------- próximos estrenos
+
+export type Upcoming =
+  | { kind: "tv_next"; date: string | null; season: number; episode: number }
+  | { kind: "tv_returning" }
+  | { kind: "tv_planned" }
+  | { kind: "tv_ended" }
+  | { kind: "tv_canceled" }
+  | { kind: "movie_unreleased"; date: string | null }
+  | { kind: "movie_sequel"; id: number; title: string; date: string | null }
+  | { kind: "movie_none" };
+
+// Qué viene después: siguiente capítulo/temporada (series) o estreno/secuela (películas). Datos de TMDB.
+export async function getUpcoming(type: MediaType, id: number, lang: string): Promise<Upcoming | null> {
+  try {
+    const d: any = await tmdb(`/${type}/${id}`, lang);
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (type === "tv") {
+      const next = d.next_episode_to_air;
+      if (next) {
+        return {
+          kind: "tv_next",
+          date: next.air_date || null,
+          season: next.season_number ?? 1,
+          episode: next.episode_number ?? 1,
+        };
+      }
+      const status: string = d.status ?? "";
+      if (status === "Canceled") return { kind: "tv_canceled" };
+      if (status === "Planned") return { kind: "tv_planned" };
+      if (status === "Returning Series" || status === "In Production" || d.in_production) {
+        return { kind: "tv_returning" };
+      }
+      return { kind: "tv_ended" };
+    }
+
+    // Película
+    const status: string = d.status ?? "";
+    const release: string = d.release_date ?? "";
+    if (status !== "Released" && status !== "Canceled") {
+      return { kind: "movie_unreleased", date: release || null };
+    }
+    if (d.belongs_to_collection?.id) {
+      const col: any = await tmdb(`/collection/${d.belongs_to_collection.id}`, lang);
+      const upcoming = ((col.parts ?? []) as any[])
+        .filter((p) => p.id !== id && (!p.release_date || p.release_date > today))
+        .sort((a, b) => String(a.release_date || "9999").localeCompare(String(b.release_date || "9999")))[0];
+      if (upcoming) {
+        return { kind: "movie_sequel", id: upcoming.id, title: upcoming.title, date: upcoming.release_date || null };
+      }
+    }
+    return { kind: "movie_none" };
+  } catch {
+    return null;
+  }
+}
+
+// Títulos parecidos: primero las recomendaciones de TMDB y, si no hay, los "similares".
+export async function getRelated(type: MediaType, id: number, lang: string): Promise<TmdbItem[]> {
+  try {
+    let res: any = await tmdb(`/${type}/${id}/recommendations`, lang);
+    let list: any[] = res.results ?? [];
+    if (list.length < 6) {
+      res = await tmdb(`/${type}/${id}/similar`, lang);
+      const seen = new Set(list.map((r) => r.id));
+      list = [...list, ...(res.results ?? []).filter((r: any) => !seen.has(r.id))];
+    }
+    return list
+      .filter((r) => r.poster_path)
+      .slice(0, 14)
+      .map((r) => normalize(r, type))
+      .filter((x): x is TmdbItem => x !== null);
+  } catch {
+    return [];
+  }
+}

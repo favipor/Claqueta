@@ -9,7 +9,7 @@ import { useI18n } from "./I18nProvider";
 import { ClapperIcon } from "./ClapperIcon";
 import { Avatar } from "./Avatar";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowRightIcon, BookmarkIcon, FilmIcon, TvIcon } from "./NavIcons";
+import { ArrowRightIcon, BookIcon, BookmarkIcon, FilmIcon, TvIcon, UsersIcon } from "./NavIcons";
 
 export type Account = {
   userId: string;
@@ -88,7 +88,13 @@ export function NavbarClient({ account }: { account: Account | null }) {
   const links = [
     { href: "/peliculas", label: t("nav.movies"), Icon: FilmIcon },
     { href: "/series", label: t("nav.series"), Icon: TvIcon },
-    ...(userName ? [{ href: "/mi-lista", label: t("nav.myList"), Icon: BookmarkIcon }] : []),
+    ...(userName
+      ? [
+          { href: "/mi-lista", label: t("nav.myList"), Icon: BookmarkIcon },
+          { href: "/descubrir", label: t("nav.discover"), Icon: UsersIcon },
+        ]
+      : []),
+    { href: "/guia", label: t("nav.guide"), Icon: BookIcon },
   ];
 
   const searchInput = (

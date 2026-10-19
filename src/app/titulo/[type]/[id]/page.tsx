@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getDetail, getTvSeasons, img, type MediaType, type TvSeason } from "@/lib/tmdb";
+import { getDetail, getRelated, getTvSeasons, getUpcoming, img, type MediaType, type TvSeason } from "@/lib/tmdb";
 import { readTvState } from "@/lib/tv-state";
 import type { TvState } from "@/lib/series-types";
 import { TvTracking } from "@/components/TvTracking";
@@ -12,6 +12,9 @@ import { getT } from "@/lib/i18n-server";
 import { createClient } from "@/lib/supabase/server";
 import { TrackPanel } from "@/components/TrackPanel";
 import { AddToList } from "@/components/AddToList";
+import { UpcomingInfo } from "@/components/UpcomingInfo";
+import { ScrollRow } from "@/components/ScrollRow";
+import { TitleCard } from "@/components/TitleCard";
 import { RecommendButton } from "@/components/RecommendButton";
 import { Reveal } from "@/components/Reveal";
 import { CastCard } from "@/components/CastCard";
@@ -53,6 +56,12 @@ export default async function TitlePage({ params }: Props) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Qué viene después (próxima temporada o secuela) y títulos parecidos, en paralelo
+  const [upcoming, related] = await Promise.all([
+    getUpcoming(p.type, p.id, lang),
+    getRelated(p.type, p.id, lang),
+  ]);
 
   let initial: { status: Status | null; rating: number | null; private_note: string | null } = {
     status: null,
@@ -227,6 +236,12 @@ export default async function TitlePage({ params }: Props) {
         )}
       </Reveal>
 
+      {upcoming && (
+        <Reveal>
+          <UpcomingInfo info={upcoming} />
+        </Reveal>
+      )}
+
       {d.providers.length > 0 && (
         <Reveal>
           <section>
@@ -295,8 +310,29 @@ export default async function TitlePage({ params }: Props) {
 
       {comments && (
         <Reveal>
+          <div id="conversacion" className="scroll-mt-24" />
           <Conversation tmdbId={d.id} mediaType={d.media_type} initial={comments} viewer={viewer} />
         </Reveal>
+      )}
+
+      {related.length > 0 && (
+        <section>
+          <h2 className="mb-1 text-lg font-bold">{t("rel.title")}</h2>
+          <ScrollRow label={t("rel.title")}>
+            {related.map((it) => (
+              <div key={`${it.media_type}-${it.id}`} className="w-36 shrink-0 snap-start sm:w-44">
+                <TitleCard
+                  id={it.id}
+                  type={it.media_type}
+                  title={it.title}
+                  posterPath={it.poster_path}
+                  year={it.year}
+                  reveal={false}
+                />
+              </div>
+            ))}
+          </ScrollRow>
+        </section>
       )}
     </article>
   );

@@ -60,3 +60,50 @@ export async function adminUnblock(userId: string): Promise<{ ok: boolean }> {
   revalidatePath("/admin");
   return { ok: true };
 }
+
+// ---------------------------------------------------------------- usuarios
+
+export type AdminActionError = "forbidden" | "self" | "last_admin" | "is_admin" | "db";
+
+function mapAdminError(message: string | undefined): AdminActionError {
+  if (message?.includes("self")) return "self";
+  if (message?.includes("last_admin")) return "last_admin";
+  if (message?.includes("is_admin")) return "is_admin";
+  if (message?.includes("forbidden")) return "forbidden";
+  return "db";
+}
+
+export async function adminSetAdmin(
+  userId: string,
+  make: boolean
+): Promise<{ ok: true } | { ok: false; error: AdminActionError }> {
+  const ctx = await requireAdmin();
+  if (!ctx || !isUuid(userId)) return { ok: false, error: "forbidden" };
+  const { error } = await ctx.supabase.rpc("admin_set_admin", { p_user: userId, p_make: !!make });
+  if (error) return { ok: false, error: mapAdminError(error.message) };
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function adminSetSilence(
+  userId: string,
+  on: boolean
+): Promise<{ ok: true } | { ok: false; error: AdminActionError }> {
+  const ctx = await requireAdmin();
+  if (!ctx || !isUuid(userId)) return { ok: false, error: "forbidden" };
+  const { error } = await ctx.supabase.rpc("admin_set_silence", { p_user: userId, p_on: !!on });
+  if (error) return { ok: false, error: mapAdminError(error.message) };
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function adminDeleteUser(
+  userId: string
+): Promise<{ ok: true } | { ok: false; error: AdminActionError }> {
+  const ctx = await requireAdmin();
+  if (!ctx || !isUuid(userId)) return { ok: false, error: "forbidden" };
+  const { error } = await ctx.supabase.rpc("admin_delete_user", { p_user: userId });
+  if (error) return { ok: false, error: mapAdminError(error.message) };
+  revalidatePath("/admin");
+  return { ok: true };
+}

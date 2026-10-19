@@ -10,6 +10,7 @@ import { FollowButton } from "@/components/FollowButton";
 import { RequestsPanel, type Person } from "@/components/RequestsPanel";
 import { ProfilePills } from "@/components/ProfilePills";
 import { BellIcon, ListIcon, MessageIcon } from "@/components/NavIcons";
+import { ShareProfile } from "@/components/ShareProfile";
 import { BlockButton } from "@/components/BlockButton";
 import { StatsPanel } from "@/components/StatsPanel";
 import { TitleCard } from "@/components/TitleCard";
@@ -222,12 +223,15 @@ export default async function ProfilePage({ params, searchParams }: Props) {
 
             <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
               {isOwner ? (
+                <>
                 <Link
                   href="/ajustes"
                   className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-bold transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-hover dark:border-neutral-700 dark:hover:bg-neutral-800"
                 >
                   {t("profile.edit")}
                 </Link>
+                <ShareProfile username={profile.username!} />
+                </>
               ) : (
                 <>
                   {!iBlocked && <FollowButton targetId={profile.id} initial={rel} loggedIn={!!user} />}

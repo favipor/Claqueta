@@ -5,6 +5,7 @@ import { TitleCard } from "./TitleCard";
 import { Reveal } from "./Reveal";
 import { HeroBackdrop } from "./HeroBackdrop";
 import { ScrollRow } from "./ScrollRow";
+import { GuideVideoButton } from "./GuideVideo";
 import { InfiniteCatalog } from "./InfiniteCatalog";
 import { BookmarkIcon, FilmIcon, TvIcon } from "./NavIcons";
 import { createClient } from "@/lib/supabase/server";
@@ -116,6 +117,9 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
                   {t("nav.myList")}
                 </HeroLink>
               )}
+            </div>
+            <div className="mt-4 flex justify-center">
+              <GuideVideoButton />
             </div>
           </div>
         </section>
