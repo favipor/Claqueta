@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
-import { TitleCard } from "@/components/TitleCard";
+import { MyListGrid } from "@/components/MyListGrid";
 import { STATUSES, type Status } from "@/lib/dict";
 import { getTvSeasons, type TvSeason } from "@/lib/tmdb";
 import { ListControls } from "@/components/ListControls";
@@ -170,21 +170,18 @@ export default async function MyListPage({
           {(allRows ?? []).length === 0 ? t("list.empty") : t("list.noMatch")}
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {rows.map((r, i) => (
-            <TitleCard
-              key={`${r.media_type}-${r.tmdb_id}`}
-              id={r.tmdb_id}
-              type={r.media_type as "movie" | "tv"}
-              title={r.title}
-              posterPath={r.poster_path}
-              status={r.status as Status | null}
-              rating={r.rating === null ? null : Number(r.rating)}
-              index={i}
-              progress={r.media_type === "tv" ? progress.get(r.tmdb_id as number) : undefined}
-            />
-          ))}
-        </div>
+        <MyListGrid
+          key={`${estado}-${tipo}-${orden}-${genero}`}
+          rows={rows.map((r) => ({
+            tmdb_id: r.tmdb_id as number,
+            media_type: r.media_type as "movie" | "tv",
+            title: r.title as string,
+            poster_path: r.poster_path as string | null,
+            status: r.status as Status | null,
+            rating: r.rating === null ? null : Number(r.rating),
+            progress: r.media_type === "tv" ? progress.get(r.tmdb_id as number) : undefined,
+          }))}
+        />
       )}
     </div>
   );

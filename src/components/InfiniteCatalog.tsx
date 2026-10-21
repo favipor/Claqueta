@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { TitleCard } from "./TitleCard";
 import { useI18n } from "./I18nProvider";
 import type { CatalogKind, SortKey, TmdbItem } from "@/lib/tmdb";
+import { genresForKind, type GenreKey } from "@/lib/genre-filter";
+import type { DictKey } from "@/lib/dict";
+
+const SORT_OPTIONS: SortKey[] = ["popularity", "rating", "rating_low", "recent", "oldest"];
 
 const PAGE = 20; // títulos que se muestran de golpe
 const keyOf = (i: TmdbItem) => `${i.media_type}-${i.id}`;
@@ -20,6 +24,7 @@ export function InfiniteCatalog({
   initialTotalPages: number;
 }) {
   const { t } = useI18n();
+  const [genre, setGenre] = useState<GenreKey | "">("");
   const [sort, setSort] = useState<SortKey>("popularity");
   const [items, setItems] = useState<TmdbItem[]>(initialItems);
   const [page, setPage] = useState(1);
@@ -34,13 +39,13 @@ export function InfiniteCatalog({
   const reqId = useRef(0);
 
   const load = useCallback(
-    async (nextPage: number, nextSort: SortKey, replace: boolean) => {
+    async (nextPage: number, nextSort: SortKey, replace: boolean, nextGenre: GenreKey | "" = genre) => {
       const id = ++reqId.current;
       loadingRef.current = true;
       setLoading(true);
       setError(false);
       try {
-        const res = await fetch(`/api/discover?kind=${kind}&sort=${nextSort}&page=${nextPage}`);
+        const res = await fetch(`/api/discover?kind=${kind}&sort=${nextSort}&page=${nextPage}${nextGenre ? `&genre=${nextGenre}` : ""}`);
         if (!res.ok) throw new Error("fetch");
         const data = (await res.json()) as { items: TmdbItem[]; totalPages: number };
         if (id !== reqId.current) return; // llegó una respuesta antigua: se ignora
@@ -60,15 +65,16 @@ export function InfiniteCatalog({
         }
       }
     },
-    [kind]
+    [kind, genre]
   );
 
-  function onSort(next: SortKey) {
-    setSort(next);
+  function refetch(nextSort: SortKey, nextGenre: GenreKey | "") {
+    setSort(nextSort);
+    setGenre(nextGenre);
     setItems([]);
     setPage(0);
     setShown(PAGE);
-    load(1, next, true);
+    load(1, nextSort, true, nextGenre);
   }
 
   // Enseña 20 más; si quedan pocos ya descargados, pide la página siguiente a TMDB.
@@ -77,10 +83,10 @@ export function InfiniteCatalog({
     const remaining = items.length - shown;
     if (remaining > 0) setShown((n) => n + PAGE);
     if (remaining <= PAGE && page > 0 && page < totalPages) {
-      await load(page + 1, sort, false);
+      await load(page + 1, sort, false, genre);
       if (remaining <= 0) setShown((n) => n + PAGE);
     }
-  }, [items.length, shown, page, totalPages, sort, load]);
+  }, [items.length, shown, page, totalPages, sort, genre, load]);
 
   // Con el scroll infinito activo, cuando el final se acerca a la pantalla se piden más.
   useEffect(() => {
@@ -102,18 +108,37 @@ export function InfiniteCatalog({
     <section>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold">{t("home.all")}</h2>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-neutral-500">{t("sort.label")}</span>
-          <select
-            value={sort}
-            onChange={(e) => onSort(e.target.value as SortKey)}
-            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          >
-            <option value="popularity">{t("sort.popularity")}</option>
-            <option value="rating">{t("sort.rating")}</option>
-            <option value="recent">{t("sort.recent")}</option>
-          </select>
-        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-neutral-500">
+            {t("sort.label")}
+            <select
+              value={sort}
+              onChange={(e) => refetch(e.target.value as SortKey, genre)}
+              className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm font-medium text-neutral-900 outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {t(`sort.${o}` as DictKey)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm text-neutral-500">
+            {t("list.genre")}
+            <select
+              value={genre}
+              onChange={(e) => refetch(sort, e.target.value as GenreKey | "")}
+              className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm font-medium text-neutral-900 outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="">{t("list.allGenres")}</option>
+              {genresForKind(kind).map((g) => (
+                <option key={g} value={g}>
+                  {t(`genre.${g}` as DictKey)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -136,7 +161,7 @@ export function InfiniteCatalog({
             {t("catalog.error")}{" "}
             <button
               type="button"
-              onClick={() => load(Math.max(page, 0) + 1, sort, page === 0)}
+              onClick={() => load(Math.max(page, 0) + 1, sort, page === 0, genre)}
               className="font-semibold text-brand-fg underline"
             >
               {t("catalog.retry")}

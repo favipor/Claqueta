@@ -181,8 +181,9 @@ export async function getTitleMeta(
   };
 }
 
+import { genreIdFor, type GenreKey } from "./genre-filter";
 export type CatalogKind = "all" | "movie" | "tv";
-export type SortKey = "popularity" | "rating" | "recent";
+export type SortKey = "popularity" | "rating" | "rating_low" | "recent" | "oldest";
 
 export async function getTrending(
   lang: string,
@@ -199,16 +200,20 @@ const SORT_PARAM: Record<MediaType, Record<SortKey, string>> = {
   movie: {
     popularity: "popularity.desc",
     rating: "vote_average.desc",
+    rating_low: "vote_average.asc",
     recent: "primary_release_date.desc",
+    oldest: "primary_release_date.asc",
   },
   tv: {
     popularity: "popularity.desc",
     rating: "vote_average.desc",
+    rating_low: "vote_average.asc",
     recent: "first_air_date.desc",
+    oldest: "first_air_date.asc",
   },
 };
 
-async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: string) {
+async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: string, genre?: GenreKey) {
   const today = new Date().toISOString().slice(0, 10);
   const params: Record<string, string> = {
     sort_by: SORT_PARAM[type][sort],
@@ -217,6 +222,15 @@ async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: s
   };
   // Mejor valoradas: se exige un mínimo de votos para que no ganen títulos con 1 voto.
   if (sort === "rating") params["vote_count.gte"] = type === "movie" ? "500" : "300";
+  // Nota más baja: también con mínimo de votos, para que no salgan títulos desconocidos con 1 voto.
+  if (sort === "rating_low") params["vote_count.gte"] = type === "movie" ? "500" : "300";
+  // Más antiguas: clásicos con un mínimo de votos.
+  if (sort === "oldest") params["vote_count.gte"] = "200";
+  if (genre) {
+    const gid = genreIdFor(genre, type);
+    if (gid === null) return { items: [] as TmdbItem[], totalPages: 1 }; // ese género no existe para este tipo
+    params.with_genres = String(gid);
+  }
   // Más recientes: solo lo ya estrenado y con algo de actividad.
   if (sort === "recent") {
     params[type === "movie" ? "primary_release_date.lte" : "first_air_date.lte"] = today;
@@ -237,14 +251,15 @@ export async function getDiscover(
   kind: CatalogKind,
   sort: SortKey,
   page: number,
-  lang: string
+  lang: string,
+  genre?: GenreKey
 ): Promise<{ items: TmdbItem[]; totalPages: number }> {
   const p = Math.min(Math.max(1, Math.floor(page) || 1), 500);
 
   if (kind === "all") {
     const [m, t] = await Promise.all([
-      discoverOne("movie", sort, p, lang),
-      discoverOne("tv", sort, p, lang),
+      discoverOne("movie", sort, p, lang, genre),
+      discoverOne("tv", sort, p, lang, genre),
     ]);
     const items: TmdbItem[] = [];
     const n = Math.max(m.items.length, t.items.length);
@@ -252,9 +267,11 @@ export async function getDiscover(
       if (m.items[i]) items.push(m.items[i]);
       if (t.items[i]) items.push(t.items[i]);
     }
-    return { items, totalPages: Math.min(m.totalPages, t.totalPages) };
+    // si un tipo no tiene ese género, se usan las páginas del otro
+    const pages = m.items.length === 0 ? t.totalPages : t.items.length === 0 ? m.totalPages : Math.min(m.totalPages, t.totalPages);
+    return { items, totalPages: pages };
   }
-  return discoverOne(kind, sort, p, lang);
+  return discoverOne(kind, sort, p, lang, genre);
 }
 
 export async function searchTitles(q: string, lang: string): Promise<TmdbItem[]> {
