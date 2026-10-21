@@ -5,9 +5,11 @@ import { TitleCard } from "./TitleCard";
 import { useI18n } from "./I18nProvider";
 import type { CatalogKind, SortKey, TmdbItem } from "@/lib/tmdb";
 
+const PAGE = 20; // títulos que se muestran de golpe
 const keyOf = (i: TmdbItem) => `${i.media_type}-${i.id}`;
 
-// Catálogo completo: carga la primera página desde el servidor y el resto conforme se hace scroll.
+// Catálogo completo: la primera tanda viene del servidor y el resto solo se carga al pulsar «Ver más»
+// (así la página carga rápido y se llega al pie sin que la lista crezca sola).
 export function InfiniteCatalog({
   kind,
   initialItems,
@@ -24,8 +26,10 @@ export function InfiniteCatalog({
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-
+  const [shown, setShown] = useState(PAGE); // cuántos títulos se ven
+  const [started, setStarted] = useState(false); // tras el primer «Ver más» el scroll es infinito
   const sentinel = useRef<HTMLDivElement>(null);
+
   const loadingRef = useRef(false);
   const reqId = useRef(0);
 
@@ -63,32 +67,36 @@ export function InfiniteCatalog({
     setSort(next);
     setItems([]);
     setPage(0);
+    setShown(PAGE);
     load(1, next, true);
   }
 
-  // Cuando el final de la lista se acerca a la pantalla, se pide la página siguiente.
+  // Enseña 20 más; si quedan pocos ya descargados, pide la página siguiente a TMDB.
+  const more = useCallback(async () => {
+    if (loadingRef.current) return;
+    const remaining = items.length - shown;
+    if (remaining > 0) setShown((n) => n + PAGE);
+    if (remaining <= PAGE && page > 0 && page < totalPages) {
+      await load(page + 1, sort, false);
+      if (remaining <= 0) setShown((n) => n + PAGE);
+    }
+  }, [items.length, shown, page, totalPages, sort, load]);
+
+  // Con el scroll infinito activo, cuando el final se acerca a la pantalla se piden más.
   useEffect(() => {
     const el = sentinel.current;
-    if (!el) return;
+    if (!el || !started) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          !loadingRef.current &&
-          !error &&
-          page > 0 &&
-          page < totalPages
-        ) {
-          load(page + 1, sort, false);
-        }
+        if (entries[0].isIntersecting && !error && page > 0) more();
       },
-      { rootMargin: "800px 0px" }
+      { rootMargin: "600px 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [page, totalPages, sort, error, load]);
+  }, [started, error, page, more]);
 
-  const atEnd = page > 0 && page >= totalPages && !loading;
+  const atEnd = page > 0 && page >= totalPages && shown >= items.length && !loading;
 
   return (
     <section>
@@ -109,7 +117,7 @@ export function InfiniteCatalog({
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {items.map((it, i) => (
+        {items.slice(0, shown).map((it, i) => (
           <TitleCard
             key={keyOf(it)}
             id={it.id}
@@ -123,9 +131,8 @@ export function InfiniteCatalog({
       </div>
 
       <div ref={sentinel} className="py-8 text-center text-sm text-neutral-500" aria-live="polite">
-        {loading && t("catalog.loading")}
         {error && (
-          <span>
+          <p className="mb-3">
             {t("catalog.error")}{" "}
             <button
               type="button"
@@ -134,8 +141,22 @@ export function InfiniteCatalog({
             >
               {t("catalog.retry")}
             </button>
-          </span>
+          </p>
         )}
+        {!started && !atEnd && !error && page > 0 && (
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => {
+              setStarted(true);
+              more();
+            }}
+            className="rounded-full bg-brand px-8 py-3 text-sm font-semibold text-white shadow transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-hover disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg"
+          >
+            {t("catalog.more")}
+          </button>
+        )}
+        {loading && t("catalog.loading")}
         {atEnd && !error && t("catalog.end")}
       </div>
     </section>

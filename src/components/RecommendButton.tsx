@@ -28,6 +28,13 @@ export function RecommendButton({ meta }: { meta: Meta }) {
     if (next) start(async () => setFriends(await listMutualFollowers()));
   }
 
+  // WhatsApp: abre el chat de WhatsApp con el mensaje y el enlace al título ya escritos
+  function shareWhatsApp() {
+    const url = `${window.location.origin}/titulo/${meta.media_type}/${meta.tmdb_id}`;
+    const text = [t("rec.waMsg"), meta.title, note.trim(), url].filter(Boolean).join("\n");
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  }
+
   function send() {
     if (!picked) return;
     setError(null);
@@ -109,6 +116,19 @@ export function RecommendButton({ meta }: { meta: Meta }) {
               </button>
             </>
           )}
+          <div className="border-t border-neutral-200 pt-3 dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={shareWhatsApp}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-2 text-sm font-semibold text-neutral-950 transition hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#128C7E]"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
+                <path d="M12.04 2a9.9 9.9 0 0 0-8.5 14.9L2 22l5.27-1.38A9.9 9.9 0 1 0 12.04 2Zm0 18.1c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-3.13.82.84-3.05-.2-.31A8.1 8.1 0 1 1 12.04 20.1Zm4.44-6.07c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.32-.75-1.8-.2-.47-.4-.41-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.09 3.62.57.25 1.02.4 1.37.5.58.18 1.1.16 1.51.1.46-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28Z" />
+              </svg>
+              {t("rec.whatsapp")}
+            </button>
+            <p className="mt-1.5 text-center text-xs text-neutral-500">{t("rec.waHint")}</p>
+          </div>
           {error && (
             <p role="alert" className="text-xs text-red-600 dark:text-red-400">
               {t(`msg.err.${error}` as DictKey)}

@@ -18,14 +18,14 @@ export function HeroBackdrop({ posters }: { posters: string[] }) {
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="absolute -inset-x-40 -inset-y-24 flex -rotate-6 justify-center gap-3 opacity-55">
         {columns.map((col, c) => (
-          <div key={c} className={`${c >= 8 ? "hidden sm:block" : ""} w-24 shrink-0 sm:w-28`}>
+          <div key={c} className={`${c >= 8 ? "hidden lg:block" : c >= 4 ? "hidden sm:block" : ""} w-36 shrink-0 sm:w-44 xl:w-56`}>
             <div
               className={`flex flex-col ${c % 2 ? "marquee-down" : "marquee-up"}`}
               style={{ animationDuration: `${70 + c * 7}s` }}
             >
               {[...col, ...col].map((p, i) => (
                 <div key={i} className="relative mb-3 aspect-[2/3] w-full shrink-0 overflow-hidden rounded-lg">
-                  <Image src={img(p, "w185")!} alt="" fill sizes="112px" className="object-cover" />
+                  <Image src={img(p, "w342")!} alt="" fill sizes="(min-width: 1280px) 224px, 176px" className="object-cover" />
                 </div>
               ))}
             </div>

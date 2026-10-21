@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Lexend } from "next/font/google";
 import { A11yPanel } from "@/components/A11yPanel";
 import { ScrollTop } from "@/components/ScrollTop";
+import { Footer } from "@/components/Footer";
 import { Splash } from "@/components/Splash";
 import { I18nProvider } from "@/components/I18nProvider";
 import { getT } from "@/lib/i18n-server";
@@ -28,20 +29,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col overflow-x-clip">
         <I18nProvider lang={lang}>
           <Splash />
           <Navbar />
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-          <footer className="border-t border-neutral-200 px-4 py-6 text-center text-xs text-neutral-500 dark:border-neutral-800">
-            <p>
-              <a href="/guia" className="font-semibold underline-offset-2 hover:underline">
-                {t("footer.guide")}
-              </a>
-            </p>
-            <p className="mt-1">{t("footer.tmdb")}</p>
-            <p className="mt-1">Claqueta · {t("app.tagline")}</p>
-          </footer>
+          <Footer />
           <A11yPanel />
           <ScrollTop />
         </I18nProvider>

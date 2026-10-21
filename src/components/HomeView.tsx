@@ -91,10 +91,10 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
   return (
     <div className="space-y-10">
       <Reveal>
-        <section className="relative overflow-hidden rounded-3xl px-6 py-14 text-white sm:px-12 sm:py-20">
+        <section className="relative left-1/2 -mt-8 w-screen -translate-x-1/2 overflow-hidden flex min-h-[calc(100svh-4.5rem)] items-center px-6 py-16 text-white">
           <HeroBackdrop posters={posters} />
-          <div className="relative z-10 text-center">
-            <h1 className="text-3xl font-extrabold drop-shadow sm:text-5xl">{t("home.hero")}</h1>
+          <div className="relative z-10 mx-auto w-full max-w-3xl text-center">
+            <h1 className="text-4xl font-extrabold drop-shadow sm:text-6xl">{t("home.hero")}</h1>
             <p className="mx-auto mt-3 max-w-xl text-white/90 drop-shadow">{t("home.heroSub")}</p>
             <form action="/buscar" role="search" className="mx-auto mt-6 max-w-xl">
               <input
@@ -128,7 +128,11 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
       <TrendingRow title={t("home.trendingToday")} items={day} />
       <TrendingRow title={t("home.trending")} items={week} />
 
-      <InfiniteCatalog kind={kind} initialItems={first.items} initialTotalPages={first.totalPages} />
+      <InfiniteCatalog
+        kind={kind}
+        initialItems={first.items}
+        initialTotalPages={first.totalPages}
+      />
     </div>
   );
 }

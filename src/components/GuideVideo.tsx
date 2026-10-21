@@ -9,7 +9,10 @@ import { useI18n } from "./I18nProvider";
 // Vídeo-guía animado: se dibuja en la propia página (sin archivo de vídeo), así casi no pesa
 // y se ve nítido en cualquier pantalla. Se abre en una ventana centrada con el fondo difuminado.
 
-const SCENE_MS = 6000;
+// Duración mínima de cada escena (ms): lo que tardan en verse sus animaciones.
+// La intro es corta a propósito. Con voz, la escena dura lo que dure la locución.
+const MIN_MS = [3500, 5500, 6500, 5500, 6500, 5500, 6500, 5500];
+const SPEECH_GAP_MS = 350; // pausa tras acabar de hablar antes de pasar a la siguiente escena
 
 type L = [string, string];
 const POSTERS = [
@@ -255,6 +258,43 @@ const CAPTIONS: L[] = [
   ["7 · Y mucho más", "7 · And much more"],
 ];
 
+
+const NARRATION: L[] = [
+  ["Bienvenido a Claqueta: tu cine, tus opiniones y tus amigos, en un solo sitio.", "Welcome to Claqueta: your cinema, your opinions and your friends, all in one place."],
+  ["Explora miles de películas y series. Busca cualquier título o descubre lo que está de moda.", "Explore thousands of movies and series. Search any title or see what's trending."],
+  ["Marca lo que quieres ver, lo que estás viendo y lo que ya has visto, y ponle nota con estrellas, enteras o medias. Tus notas son privadas.", "Mark what you want to watch, what you're watching and what you've seen, and rate it with stars, whole or half. Your ratings are private."],
+  ["En las series, sigue tu progreso temporada a temporada y capítulo a capítulo. Con un toque marcas todo lo anterior como visto.", "For series, follow your progress season by season and episode by episode. One tap marks everything before it as watched."],
+  ["Crea listas con películas y series mezcladas, elige quién puede verlas, ordena Mi lista por nota o género, y expórtala a Excel.", "Create lists mixing movies and series, choose who can see them, sort My list by rating or genre, and export it to Excel."],
+  ["En Descubrir encuentras gente con tus mismos gustos, con su porcentaje de afinidad. Y puedes invitar a tus amigos con tu enlace.", "In Discover you'll find people with your taste, with their match percentage. And you can invite your friends with your link."],
+  ["Chatea con tus seguidores mutuos y recomiéndales títulos. Ellos pueden añadirlos a pendientes con un toque, y sin confirmaciones de lectura.", "Chat with your mutual followers and recommend titles. They can add them to their watchlist in one tap, and there are no read receipts."],
+  ["Además verás cuándo llega el próximo capítulo, recibirás avisos y podrás ajustar la accesibilidad. ¡Empieza a marcar lo que ves!", "You'll also see when the next episode arrives, get alerts and adjust accessibility. Start tracking what you watch!"],
+];
+
+// Elige la mejor voz FEMENINA del dispositivo para el idioma. Cada sistema trae las suyas:
+// se prefieren las «naturales/neuronales» (Edge, Chrome, Apple) y se descartan las masculinas conocidas.
+const FEMALE = /(helena|laura|m[oó]nica|paulina|sabina|elvira|dalia|luc[ií]a|marisol|esperanza|ximena|camila|ana\b|elena|carmen|isabella|salome|samantha|zira|susan|hazel|libby|sonia|maisie|aria|jenny|karen|catherine|serena|moira|tessa|female|mujer|femenin|google espa|google uk english female|google us english)/i;
+const MALE = /(pablo|jorge|diego|ra[uú]l|[aá]lvaro|miguel|juan|carlos|enrique|david|mark|guy|ryan|george|james|daniel|thomas|fred|alex\b|tom\b|andr[eé]s|antonio|male\b|hombre|masculin|alvaro|ronnie|liam|christopher|eric|roger|steffan|willem)/i;
+const NATURAL = /(natural|neural|online|premium|enhanced|mejorada|siri|wavenet|studio)/i;
+
+type Choice = { voice: SpeechSynthesisVoice | null; female: boolean };
+function pickVoice(lang: "es" | "en"): Choice {
+  const all = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().replace("_", "-").startsWith(lang));
+  if (all.length === 0) return { voice: null, female: false };
+  const region = lang === "es" ? ["es-es", "es-mx", "es-us"] : ["en-gb", "en-us"];
+  const score = (v: SpeechSynthesisVoice) => {
+    const r = region.indexOf(v.lang.toLowerCase().replace("_", "-"));
+    return (
+      (FEMALE.test(v.name) ? 100 : 0) -
+      (MALE.test(v.name) ? 200 : 0) +
+      (NATURAL.test(v.name) ? 40 : 0) +
+      (v.localService ? 0 : 5) +
+      (r >= 0 ? 3 - r : 0)
+    );
+  };
+  const best = [...all].sort((a, b) => score(b) - score(a))[0];
+  return { voice: best, female: FEMALE.test(best.name) && !MALE.test(best.name) };
+}
+
 export function GuideVideoButton({ className = "" }: { className?: string }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -280,19 +320,38 @@ function GuideVideo({ onClose }: { onClose: () => void }) {
   const [mounted, setMounted] = useState(false);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
+  const [ended, setEnded] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [scale, setScale] = useState(0.6);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [speechDone, setSpeechDone] = useState(false);
+  const [voicesVer, setVoicesVer] = useState(0);
   const frameRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const last = CAPTIONS.length - 1;
   const pick = useCallback((l: L) => (lang === "en" ? l[1] : l[0]), [lang]);
+  const supported = mounted && typeof window !== "undefined" && "speechSynthesis" in window;
+  const useVoice = voiceOn && supported;
+  const text = pick(NARRATION[index]);
+  const minMs = MIN_MS[index];
 
   useEffect(() => setMounted(true), []);
+
+  // Las voces del navegador se cargan de forma asíncrona: al llegar se vuelve a elegir
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const synth = window.speechSynthesis;
+    const bump = () => setVoicesVer((v) => v + 1);
+    synth.addEventListener("voiceschanged", bump);
+    return () => synth.removeEventListener("voiceschanged", bump);
+  }, []);
 
   const go = useCallback(
     (i: number) => {
       setIndex(Math.max(0, Math.min(last, i)));
       setElapsed(0);
+      setSpeechDone(false);
+      setEnded(false);
     },
     [last]
   );
@@ -304,13 +363,52 @@ function GuideVideo({ onClose }: { onClose: () => void }) {
     return () => clearInterval(timer);
   }, [playing]);
 
+  // Locución: se lee el texto de la escena con una voz femenina del dispositivo
   useEffect(() => {
-    if (elapsed < SCENE_MS) return;
+    if (!supported || !voiceOn || !playing) return;
+    const synth = window.speechSynthesis;
+    let cancelled = false;
+    setSpeechDone(false);
+    const start = setTimeout(() => {
+      const { voice, female } = pickVoice(lang === "en" ? "en" : "es");
+      // Frases sueltas: la entonación suena más natural y se evitan los cortes de las frases largas
+      const parts = text.split(/(?<=[.!?:])\s+/).filter(Boolean);
+      synth.cancel();
+      parts.forEach((part, k) => {
+        const u = new SpeechSynthesisUtterance(part);
+        if (voice) u.voice = voice;
+        u.lang = voice?.lang ?? (lang === "en" ? "en-GB" : "es-ES");
+        u.rate = 0.95;
+        // Si el dispositivo solo tiene voces masculinas, se sube el tono para acercarla a una femenina
+        u.pitch = female ? 1.05 : voice ? 1.45 : 1.2;
+        if (k === parts.length - 1) {
+          const done = () => {
+            if (!cancelled) setTimeout(() => !cancelled && setSpeechDone(true), SPEECH_GAP_MS);
+          };
+          u.onend = done;
+          u.onerror = done;
+        }
+        synth.speak(u);
+      });
+    }, 150);
+    return () => {
+      cancelled = true;
+      clearTimeout(start);
+      synth.cancel();
+    };
+  }, [index, playing, voiceOn, supported, text, lang, voicesVer]);
+
+  // Pasa a la siguiente escena: con voz, al terminar de hablar (con un tope por si el navegador no avisa)
+  useEffect(() => {
+    if (!playing) return;
+    const maxWait = minMs + text.length * 110 + 4000;
+    const ready = useVoice ? (speechDone && elapsed >= minMs) || elapsed >= maxWait : elapsed >= minMs;
+    if (!ready) return;
     if (index >= last) {
       setPlaying(false);
-      setElapsed(SCENE_MS);
+      setEnded(true);
     } else go(index + 1);
-  }, [elapsed, index, last, go]);
+  }, [elapsed, speechDone, playing, useVoice, minMs, text, index, last, go]);
 
   // Tamaño: el escenario se diseña a 960×540 y se escala al ancho disponible
   useEffect(() => {
@@ -339,13 +437,18 @@ function GuideVideo({ onClose }: { onClose: () => void }) {
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };
   }, [onClose, go, index]);
 
   if (!mounted) return null;
 
+  const est = useVoice ? Math.max(minMs, text.length * 68) : minMs;
+  const pct = (i: number) =>
+    i < index || (i === index && ended) ? 100 : i === index ? (speechDone ? 100 : Math.min(98, (elapsed / est) * 100)) : 0;
+
   const ctrl =
-    "grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white";
+    "grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40";
 
   return createPortal(
     <div
@@ -390,10 +493,10 @@ function GuideVideo({ onClose }: { onClose: () => void }) {
             className={ctrl}
             aria-label={playing ? t("video.pause") : t("video.play")}
             onClick={() => {
-              if (!playing && index === last && elapsed >= SCENE_MS) {
+              if (ended) {
                 go(0);
-              }
-              setPlaying((p) => !p);
+                setPlaying(true);
+              } else setPlaying((p) => !p);
             }}
           >
             {playing ? (
@@ -412,20 +515,27 @@ function GuideVideo({ onClose }: { onClose: () => void }) {
 
           <div className="flex flex-1 gap-1.5" aria-hidden="true">
             {CAPTIONS.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                tabIndex={-1}
-                onClick={() => go(i)}
-                className="h-2 flex-1 overflow-hidden rounded-full bg-white/25"
-              >
-                <span
-                  className="block h-full bg-white transition-[width] duration-100"
-                  style={{ width: i < index ? "100%" : i === index ? `${Math.min(100, (elapsed / SCENE_MS) * 100)}%` : "0%" }}
-                />
+              <button key={i} type="button" tabIndex={-1} onClick={() => go(i)} className="h-2 flex-1 overflow-hidden rounded-full bg-white/25">
+                <span className="block h-full bg-white transition-[width] duration-100" style={{ width: `${pct(i)}%` }} />
               </button>
             ))}
           </div>
+
+          {supported && (
+            <button
+              type="button"
+              className={ctrl}
+              aria-pressed={voiceOn}
+              aria-label={voiceOn ? t("video.voiceOn") : t("video.voiceOff")}
+              title={voiceOn ? t("video.voiceOn") : t("video.voiceOff")}
+              onClick={() => setVoiceOn((v) => !v)}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor" />
+                {voiceOn ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m16 9 5 6m0-6-5 6" />}
+              </svg>
+            </button>
+          )}
 
           <button ref={closeRef} type="button" className={ctrl} onClick={onClose} aria-label={t("a11y.close")}>
             ×
