@@ -11,6 +11,8 @@ import { Avatar } from "./Avatar";
 import { createClient } from "@/lib/supabase/client";
 import { SearchBox } from "./SearchBox";
 import { InstallButton } from "./InstallApp";
+import { AppBadge } from "./AppBadge";
+import { Suspense } from "react";
 import { ArrowRightIcon, BookIcon, BookmarkIcon, FilmIcon, TvIcon, UsersIcon } from "./NavIcons";
 
 export type Account = {
@@ -123,6 +125,12 @@ export function NavbarClient({ account }: { account: Account | null }) {
 
 
   return (
+    <>
+    {account && (
+      <Suspense fallback={null}>
+        <AppBadge unread={account.unread + account.pendingRequests} />
+      </Suspense>
+    )}
     <header
       className={`sticky top-0 z-40 border-b border-neutral-200/70 bg-white/85 backdrop-blur transition-all dark:border-neutral-800 dark:bg-neutral-950/85 ${
         scrolled ? "py-1.5 shadow-sm" : "py-3"
@@ -330,6 +338,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
         </div>
       )}
     </header>
+    </>
   );
 }
 

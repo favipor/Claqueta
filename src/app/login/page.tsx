@@ -13,8 +13,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState(true);
+
+  // Se guarda la elección ANTES de iniciar sesión para que las cookies se creen ya con esa duración
+  function applyRemember() {
+    document.cookie = remember
+      ? "claq_remember=; path=/; max-age=0; samesite=lax"
+      : "claq_remember=0; path=/; max-age=31536000; samesite=lax";
+  }
 
   async function google() {
+    applyRemember();
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -37,7 +46,7 @@ export default function LoginPage() {
         .maybeSingle();
       if (!p?.username) dest = "/bienvenida";
     }
-    router.push(dest);
+    router.replace(dest);
     router.refresh();
   }
 
@@ -45,6 +54,7 @@ export default function LoginPage() {
     e.preventDefault();
     setBusy(true);
     setMessage(null);
+    applyRemember();
     const supabase = createClient();
 
     if (mode === "signup") {
@@ -70,6 +80,18 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-sm space-y-5 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       <h1 className="text-center text-2xl font-extrabold">{t("login.title")}</h1>
+
+      <label className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-xl bg-neutral-100 px-3 py-2.5 text-sm dark:bg-neutral-800">
+        <span>
+          <span className="block font-semibold">{t("login.remember")}</span>
+          <span className="block text-xs text-neutral-500">{t("login.rememberHint")}</span>
+        </span>
+        <input type="checkbox" role="switch" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="peer sr-only" />
+        <span
+          aria-hidden="true"
+          className="relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand-fg dark:bg-neutral-700 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"
+        />
+      </label>
 
       <button
         type="button"

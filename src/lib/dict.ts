@@ -559,6 +559,8 @@ const es = {
   "push.test": "Enviar aviso de prueba",
   "push.testSent": "Enviado. Debería llegarte en unos segundos.",
   "push.testFail": "No se ha podido enviar a ningún dispositivo.",
+  "login.remember": "Mantener la sesión iniciada",
+  "login.rememberHint": "En este dispositivo. Desmárcalo si es un ordenador compartido.",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1120,6 +1122,8 @@ const en: Record<keyof typeof es, string> = {
   "push.test": "Send a test notification",
   "push.testSent": "Sent. It should arrive in a few seconds.",
   "push.testFail": "Couldn't send to any device.",
+  "login.remember": "Keep me signed in",
+  "login.rememberHint": "On this device. Turn it off on a shared computer.",
 };
 
 export type DictKey = keyof typeof es;

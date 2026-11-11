@@ -64,3 +64,19 @@ export async function clearReadNotifications(): Promise<{ ok: boolean }> {
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+// Al pulsar un aviso del móvil se marca como leída esa notificación (y desaparece el punto rojo)
+export async function markNotificationRead(id: string): Promise<{ ok: boolean }> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false };
+  const { supabase, user } = await getUser();
+  if (!user) return { ok: false };
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .eq("id", id)
+    .is("read_at", null);
+  if (error) return { ok: false };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

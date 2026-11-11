@@ -13,12 +13,17 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   const title = data.title || "Claqueta";
+  // Punto/número en el icono de la app instalada (se quita al ver las notificaciones)
+  try {
+    if (self.navigator && self.navigator.setAppBadge) self.navigator.setAppBadge();
+  } catch (e) {}
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",
       icon: data.icon || "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       tag: data.tag,
+      renotify: !!data.tag,
       data: { url: data.url || "/notificaciones" },
     })
   );

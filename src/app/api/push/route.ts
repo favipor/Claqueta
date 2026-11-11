@@ -5,6 +5,22 @@ import { getDetail, type MediaType } from "@/lib/tmdb";
 import { dictionaries, type DictKey } from "@/lib/dict";
 import { SITE_URL } from "@/lib/site";
 
+// Título del aviso según lo que ha pasado (el texto va debajo)
+function titleFor(type: string) {
+  switch (type) {
+    case "message": return "💬 Mensaje nuevo";
+    case "recommendation": return "🎬 Te han recomendado algo";
+    case "reply": return "↩️ Te han respondido";
+    case "mention": return "📣 Te han mencionado";
+    case "follow_request": return "👤 Solicitud para seguirte";
+    case "follow": return "👤 Nuevo seguidor";
+    case "follow_accepted": return "✅ Solicitud aceptada";
+    case "new_episode": return "📺 Capítulo nuevo";
+    case "new_user": return "🆕 Nuevo registro";
+    default: return "Claqueta";
+  }
+}
+
 // La base de datos llama aquí cada vez que crea una notificación (phase9.sql, con la clave secreta).
 // Esta ruta compone el texto y lo envía como notificación push a los móviles de esa persona.
 export async function POST(request: Request) {
@@ -63,10 +79,13 @@ export async function POST(request: Request) {
       url = actor?.username ? `/u/${actor.username}` : "/notificaciones";
   }
 
+  // ?aviso=id → al abrirla se marca como leída (AppBadge)
+  const [path, hash] = url.split("#");
+  const withId = `${path}${path.includes("?") ? "&" : "?"}aviso=${n.id}${hash ? `#${hash}` : ""}`;
   const sent = await sendPushToUser(n.user_id as string, {
-    title: "Claqueta",
+    title: titleFor(n.type as string),
     body,
-    url: `${SITE_URL}${url}`,
+    url: `${SITE_URL}${withId}`,
     tag: `${n.type}-${n.tmdb_id ?? n.actor_id ?? n.id}`,
     icon: detail?.poster_path ? `https://image.tmdb.org/t/p/w185${detail.poster_path}` : undefined,
   });
