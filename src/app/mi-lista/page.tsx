@@ -35,9 +35,10 @@ export default async function MyListPage({
     .select("tmdb_id, media_type, title, poster_path, status, rating, updated_at, runtime_min, genres")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
-  if (estado) query = query.eq("status", estado);
   if (tipo) query = query.eq("media_type", tipo);
-  const { data: allRows } = await query;
+  const { data: typeRows } = await query;
+  // Se trae todo el tipo elegido para poder contar cuántos hay de cada estado
+  const allRows = (typeRows ?? []).filter((r) => !estado || r.status === estado);
 
   // Géneros presentes en tu lista (antes de filtrar por género) y orden elegido
   const genreIds = new Set<number>();
@@ -46,6 +47,15 @@ export default async function MyListPage({
   const genreOptions = [...genreIds]
     .map((id) => ({ id, name: genreName(id, uiLang) }))
     .sort((a, b) => a.name.localeCompare(b.name, uiLang));
+
+  // Cuántos títulos hay en cada pestaña de estado (con el tipo y el género elegidos)
+  const byGenre = (r: { genres: unknown }) => genero === null || ((r.genres as number[] | null) ?? []).includes(genero);
+  const counts = { all: 0, pendiente: 0, viendo: 0, visto: 0, volver_a_ver: 0 } as Record<Status | "all", number>;
+  for (const r of typeRows ?? []) {
+    if (!byGenre(r)) continue;
+    counts.all++;
+    if (r.status && STATUSES.includes(r.status as Status)) counts[r.status as Status]++;
+  }
 
   const rows = (allRows ?? [])
     .filter((r) => genero === null || ((r.genres as number[] | null) ?? []).includes(genero))
@@ -101,73 +111,43 @@ export default async function MyListPage({
     }
   }
 
-  const href = (e: string | null, ty: string | null) => {
-    const q = new URLSearchParams();
-    if (e) q.set("estado", e);
-    if (ty) q.set("tipo", ty);
-    if (orden !== "reciente") q.set("orden", orden);
-    if (genero) q.set("genero", String(genero));
-    const s = q.toString();
-    return `/mi-lista${s ? `?${s}` : ""}`;
-  };
-
-  const chip = (active: boolean) =>
-    `rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-      active
-        ? "border-brand bg-brand text-white"
-        : "border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
-    }`;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold">{t("list.title")}</h1>
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">{t("list.title")}</h1>
+        </div>
+        <div className="flex gap-2">
           <Link
             href="/importar"
-            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-hover dark:border-neutral-700 dark:hover:bg-neutral-800"
+            title={t("imp.link")}
+            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
           >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 15V3M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+            </svg>
             {t("imp.link")}
           </Link>
           <a
             href="/api/exportar"
             download
-            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-hover dark:border-neutral-700 dark:hover:bg-neutral-800"
+            title={t("list.export")}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-hover"
           >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3v12M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+            </svg>
             {t("list.export")}
           </a>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <nav className="flex flex-wrap gap-2" aria-label={t("detail.myStatus")}>
-          <Link href={href(null, tipo)} className={chip(!estado)}>
-            {t("list.all")}
-          </Link>
-          {STATUSES.map((s) => (
-            <Link key={s} href={href(s, tipo)} className={chip(estado === s)}>
-              {t(`status.${s}` as const)}
-            </Link>
-          ))}
-        </nav>
-        <nav className="flex flex-wrap gap-2">
-          <Link href={href(estado, null)} className={chip(!tipo)}>
-            {t("list.allTypes")}
-          </Link>
-          <Link href={href(estado, "movie")} className={chip(tipo === "movie")}>
-            {t("list.movies")}
-          </Link>
-          <Link href={href(estado, "tv")} className={chip(tipo === "tv")}>
-            {t("list.series")}
-          </Link>
-        </nav>
-      </div>
-
-      <ListControls estado={estado} tipo={tipo} orden={orden} genero={genero} genres={genreOptions} />
+      <ListControls estado={estado} tipo={tipo} orden={orden} genero={genero} genres={genreOptions} counts={counts} />
 
       {rows.length === 0 ? (
         <p className="py-10 text-center text-neutral-500">
-          {(allRows ?? []).length === 0 ? t("list.empty") : t("list.noMatch")}
+          {counts.all === 0 && !tipo && genero === null ? t("list.empty") : t("list.noMatch")}
         </p>
       ) : (
         <MyListGrid
