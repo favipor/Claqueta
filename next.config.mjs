@@ -8,6 +8,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Carpeta de compilación: se puede cambiar (NEXT_DIST_DIR) para compilar de prueba sin romper «npm run dev»
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Si hay un error de tipos, Vercel NO publica (así nunca sale una versión rota)
   typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: true },
