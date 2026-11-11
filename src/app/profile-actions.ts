@@ -219,3 +219,20 @@ export async function saveProviders(ids: number[]): Promise<{ ok: boolean }> {
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+// Ajustes → «Enviar aviso de prueba»: manda un push a todos tus dispositivos
+export async function sendTestPush(): Promise<{ ok: boolean; sent: number }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, sent: 0 };
+  const { sendPushToUser } = await import("@/lib/push");
+  const sent = await sendPushToUser(user.id, {
+    title: "Claqueta",
+    body: "🎬 Aviso de prueba: las notificaciones funcionan.",
+    url: "/notificaciones",
+    tag: "prueba",
+  });
+  return { ok: sent > 0, sent };
+}

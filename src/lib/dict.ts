@@ -556,6 +556,9 @@ const es = {
   "pick.length": "Duración",
   "pick.tick.any": "Todas",
   "push.not-configured": "Los avisos aún no están configurados en el servidor. Vuelve a intentarlo en un rato.",
+  "push.test": "Enviar aviso de prueba",
+  "push.testSent": "Enviado. Debería llegarte en unos segundos.",
+  "push.testFail": "No se ha podido enviar a ningún dispositivo.",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1114,6 +1117,9 @@ const en: Record<keyof typeof es, string> = {
   "pick.length": "Length",
   "pick.tick.any": "Any",
   "push.not-configured": "Notifications aren't set up on the server yet. Please try again later.",
+  "push.test": "Send a test notification",
+  "push.testSent": "Sent. It should arrive in a few seconds.",
+  "push.testFail": "Couldn't send to any device.",
 };
 
 export type DictKey = keyof typeof es;

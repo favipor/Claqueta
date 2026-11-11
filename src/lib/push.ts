@@ -28,7 +28,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
         await webpush.sendNotification(
           { endpoint: s.endpoint as string, keys: { p256dh: s.p256dh as string, auth: s.auth as string } },
           JSON.stringify(payload),
-          { TTL: 60 * 60 * 24 }
+          { TTL: 60 * 60 * 24, urgency: "high" }
         );
         sent++;
       } catch (err) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "./I18nProvider";
+import { sendTestPush } from "@/app/profile-actions";
 
 type State = "loading" | "unsupported" | "not-configured" | "ios-install" | "denied" | "off" | "on" | "busy" | "error";
 
@@ -18,6 +19,14 @@ export function PushToggle() {
   const { t } = useI18n();
   const [state, setState] = useState<State>("loading");
   const [detail, setDetail] = useState<string | null>(null);
+  const [test, setTest] = useState<"idle" | "sending" | "sent" | "fail">("idle");
+
+  async function onTest() {
+    setTest("sending");
+    const res = await sendTestPush().catch(() => ({ ok: false, sent: 0 }));
+    setTest(res.ok ? "sent" : "fail");
+    setTimeout(() => setTest("idle"), 4000);
+  }
   const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
   useEffect(() => {
@@ -127,6 +136,21 @@ export function PushToggle() {
           </button>
         ) : null}
       </div>
+      {on && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onTest}
+            disabled={test === "sending"}
+            className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-semibold hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-700 dark:hover:bg-neutral-800"
+          >
+            {t("push.test")}
+          </button>
+          <span className="text-xs text-neutral-500" aria-live="polite">
+            {test === "sending" ? t("detail.saving") : test === "sent" ? t("push.testSent") : test === "fail" ? t("push.testFail") : ""}
+          </span>
+        </div>
+      )}
       {state !== "on" && state !== "off" && state !== "busy" && state !== "loading" && (
         <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${state === "error" ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"}`}>
           {t(`push.${state}` as const)}
