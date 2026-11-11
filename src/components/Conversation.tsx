@@ -14,6 +14,7 @@ import {
 } from "@/app/comment-actions";
 import { VISIBILITIES, type CommentPage, type CommentView, type Visibility } from "@/lib/comments";
 import { Avatar } from "./Avatar";
+import { MentionTextarea } from "./MentionTextarea";
 import { useI18n } from "./I18nProvider";
 
 // Convierte @usuario en enlaces a su perfil
@@ -102,9 +103,9 @@ function Composer({
 
   return (
     <div className="space-y-2">
-      <textarea
+      <MentionTextarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onValueChange={setBody}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         aria-label={placeholder}

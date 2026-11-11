@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { TitleCard } from "./TitleCard";
 import { useI18n } from "./I18nProvider";
 import type { CatalogKind, SortKey, TmdbItem } from "@/lib/tmdb";
@@ -11,6 +12,64 @@ const SORT_OPTIONS: SortKey[] = ["popularity", "rating", "rating_low", "recent",
 
 const PAGE = 20; // títulos que se muestran de golpe
 const keyOf = (i: TmdbItem) => `${i.media_type}-${i.id}`;
+
+// ---------- Volver atrás sin perder el sitio ----------
+// Se guarda en la sesión lo que llevabas cargado (títulos, orden, género...) y la posición del scroll.
+// Al volver con el botón «atrás» se restaura todo, aunque estuvieras en el título número 200.
+type Snapshot = {
+  items: TmdbItem[];
+  page: number;
+  totalPages: number;
+  shown: number;
+  started: boolean;
+  sort: SortKey;
+  genre: GenreKey | "";
+  scrollY: number;
+  at: number;
+};
+
+// «Atrás/adelante» del navegador activa la marca; cualquier navegación normal (pulsar un enlace
+// o un cambio de página por código) la quita. No depende del tiempo que tarde la página en cargar.
+let popPending = false;
+let firstMount = true;
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", () => {
+    popPending = true;
+  });
+  document.addEventListener(
+    "click",
+    (e) => {
+      if ((e.target as Element | null)?.closest?.("a")) popPending = false;
+    },
+    true
+  );
+  const push = history.pushState.bind(history);
+  history.pushState = (...args: Parameters<History["pushState"]>) => {
+    popPending = false;
+    return push(...args);
+  };
+}
+
+function cameBack() {
+  if (popPending) return true;
+  // Recarga completa desde el historial (por ejemplo, si el navegador descartó la página)
+  if (firstMount) {
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type === "back_forward";
+  }
+  return false;
+}
+
+function readSnap(key: string): Snapshot | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const snap = JSON.parse(raw) as Snapshot;
+    return Date.now() - snap.at < 60 * 60 * 1000 ? snap : null;
+  } catch {
+    return null;
+  }
+}
 
 // Catálogo completo: la primera tanda viene del servidor y el resto solo se carga al pulsar «Ver más»
 // (así la página carga rápido y se llega al pie sin que la lista crezca sola).
@@ -34,6 +93,12 @@ export function InfiniteCatalog({
   const [shown, setShown] = useState(PAGE); // cuántos títulos se ven
   const [started, setStarted] = useState(false); // tras el primer «Ver más» el scroll es infinito
   const sentinel = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const snapKey = `catalog:${pathname}:${kind}`;
+  const [restoreY, setRestoreY] = useState<number | null>(null); // posición a la que hay que volver
+  // No se guarda nada hasta haber decidido si se restaura (si no, el estado vacío del primer
+  // pintado pisaría lo guardado antes de poder leerlo)
+  const [ready, setReady] = useState(false);
 
   const loadingRef = useRef(false);
   const reqId = useRef(0);
@@ -102,6 +167,80 @@ export function InfiniteCatalog({
     return () => io.disconnect();
   }, [started, error, page, more]);
 
+  // Al montar: si se ha vuelto atrás, se recupera el estado guardado
+  useLayoutEffect(() => {
+    const back = cameBack();
+    firstMount = false;
+    const snap = back ? readSnap(snapKey) : null;
+    if (snap && snap.items.length > 0) {
+      setItems(snap.items);
+      setPage(snap.page);
+      setTotalPages(snap.totalPages);
+      setShown(snap.shown);
+      setStarted(snap.started);
+      setSort(snap.sort);
+      setGenre(snap.genre);
+      setRestoreY(snap.scrollY);
+    }
+    setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Tras pintar los títulos restaurados se baja hasta donde estabas (varios intentos por si
+  // la página aún está creciendo o el navegador mueve el scroll por su cuenta)
+  useEffect(() => {
+    const y = restoreY;
+    if (y === null) return;
+    const go = () => window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
+    go();
+    const timers = [50, 150, 350, 700].map((ms) => setTimeout(go, ms));
+    // Si la persona empieza a mover la página, se deja de forzar la posición
+    const stop = () => timers.forEach(clearTimeout);
+    window.addEventListener("wheel", stop, { once: true, passive: true });
+    window.addEventListener("touchstart", stop, { once: true, passive: true });
+    return () => {
+      stop();
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchstart", stop);
+    };
+  }, [restoreY]);
+
+  // Se guarda el estado cada vez que cambia...
+  const save = useCallback(
+    (scrollY?: number) => {
+      if (!ready) return;
+      try {
+        const prev = readSnap(snapKey);
+        const snap: Snapshot = {
+          items,
+          page,
+          totalPages,
+          shown,
+          started,
+          sort,
+          genre,
+          scrollY: scrollY ?? prev?.scrollY ?? 0,
+          at: Date.now(),
+        };
+        sessionStorage.setItem(snapKey, JSON.stringify(snap));
+      } catch {}
+    },
+    [ready, snapKey, items, page, totalPages, shown, started, sort, genre]
+  );
+
+  useEffect(() => {
+    if (!loading) save();
+  }, [save, loading]);
+
+  // ...y la posición justo al pulsar un enlace (antes de que la página cambie)
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if ((e.target as Element | null)?.closest?.("a")) save(window.scrollY);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [save]);
+
   const atEnd = page > 0 && page >= totalPages && shown >= items.length && !loading;
 
   return (
@@ -149,6 +288,7 @@ export function InfiniteCatalog({
             type={it.media_type}
             title={it.title}
             posterPath={it.poster_path}
+            tmdbRating={it.vote_average}
             year={it.year}
             index={i}
           />

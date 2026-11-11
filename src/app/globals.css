@@ -95,6 +95,21 @@ html[data-splash="1"] .splash-overlay {
   animation: marquee-down linear infinite;
 }
 
+/* ---------- Botón «Instalar app»: un brillo lo cruza cada pocos segundos ---------- */
+@keyframes install-shine {
+  0%,
+  70% {
+    transform: translateX(0) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(400%) skewX(-20deg);
+  }
+}
+
+.install-shine {
+  animation: install-shine 4s ease-in-out infinite;
+}
+
 /* ---------- Utilidades ---------- */
 .no-scrollbar {
   scrollbar-width: none;
@@ -118,6 +133,7 @@ html[data-splash="1"] .splash-overlay {
   }
   .marquee-up,
   .marquee-down,
+  .install-shine,
   .clap-stick {
     animation: none !important;
   }
@@ -169,6 +185,7 @@ html.a11y-motion *::after {
 }
 html.a11y-motion .marquee-up,
 html.a11y-motion .marquee-down,
+html.a11y-motion .install-shine,
 html.a11y-motion .clap-stick {
   animation: none !important;
 }

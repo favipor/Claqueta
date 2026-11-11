@@ -326,6 +326,7 @@ export default async function TitlePage({ params }: Props) {
                   type={it.media_type}
                   title={it.title}
                   posterPath={it.poster_path}
+                  tmdbRating={it.vote_average}
                   year={it.year}
                   reveal={false}
                 />

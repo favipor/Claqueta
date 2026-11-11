@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { signOut } from "@/app/actions";
 import { useI18n } from "./I18nProvider";
 import { ClapperIcon } from "./ClapperIcon";
 import { Avatar } from "./Avatar";
 import { createClient } from "@/lib/supabase/client";
+import { SearchBox } from "./SearchBox";
+import { InstallButton } from "./InstallApp";
 import { ArrowRightIcon, BookIcon, BookmarkIcon, FilmIcon, TvIcon, UsersIcon } from "./NavIcons";
 
 export type Account = {
@@ -30,14 +32,20 @@ export function NavbarClient({ account }: { account: Account | null }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const [scrolled, setScrolled] = useState(false);
-  const [dark, setDark] = useState(false);
   const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState(false); // desplegable de la foto de perfil
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // Al encogerse la barra cambia la altura de la página y con ella el scroll. Con un solo umbral
+  // la barra entraba en bucle (encoger -> sube el scroll -> crecer -> baja...) y parpadeaba.
+  // Por eso se encoge pasado 80 px y solo vuelve a crecer por debajo de 8 px.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled((was) => (was ? y > 8 : y > 80));
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    setDark(document.documentElement.classList.contains("dark"));
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -61,19 +69,26 @@ export function NavbarClient({ account }: { account: Account | null }) {
 
   const hasNew = !!account && (account.unread > 0 || account.pendingRequests > 0);
 
-  // El menú móvil se cierra al cambiar de página
+  // Los menús se cierran al cambiar de página
   useEffect(() => {
     setOpen(false);
+    setMenu(false);
   }, [pathname]);
 
-  function toggleTheme() {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    try {
-      localStorage.setItem("theme", next ? "dark" : "light");
-    } catch {}
-  }
+  // El desplegable de la cuenta se cierra al pulsar fuera o con Escape
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
 
   function toggleLang() {
     const next = lang === "es" ? "en" : "es";
@@ -97,15 +112,8 @@ export function NavbarClient({ account }: { account: Account | null }) {
     { href: "/guia", label: t("nav.guide"), Icon: BookIcon },
   ];
 
-  const searchInput = (
-    <input
-      type="search"
-      name="q"
-      placeholder={t("nav.search")}
-      aria-label={t("nav.search")}
-      className="w-full rounded-full border border-neutral-300 bg-neutral-100 px-4 py-1.5 text-sm outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900"
-    />
-  );
+  const searchClass =
+    "w-full rounded-full border border-neutral-300 bg-neutral-100 px-4 py-1.5 text-sm outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900";
 
   const langBtn = (
     <button onClick={toggleLang} className={btn} aria-label={t("nav.lang")}>
@@ -113,14 +121,6 @@ export function NavbarClient({ account }: { account: Account | null }) {
           </button>
   );
 
-  const themeBtn = (
-    <button onClick={toggleTheme} className={btn} aria-label={t("nav.theme")} title={t("nav.theme")}>
-            {/* Cuadrado partido en diagonal (/): al cambiar de tema, las mitades se invierten girando */}
-            <span className="block h-6 w-6 overflow-hidden rounded-sm border-2 border-neutral-900 dark:border-white">
-              <span className="block h-full w-full rotate-180 bg-[linear-gradient(to_bottom_right,#000_50%,#fff_50%)] transition-transform duration-500 ease-in-out dark:rotate-0" />
-            </span>
-          </button>
-  );
 
   return (
     <header
@@ -139,9 +139,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
           <span className={scrolled ? "hidden text-lg sm:inline" : "text-2xl"}>Claqueta</span>
         </Link>
 
-        <form action="/buscar" className="mx-auto hidden min-w-0 flex-1 sm:block sm:max-w-md" role="search">
-          {searchInput}
-        </form>
+        <SearchBox className="mx-auto hidden min-w-0 flex-1 sm:block sm:max-w-md" inputClassName={searchClass} />
 
         <nav className="ml-auto flex items-center gap-1 sm:ml-0" aria-label="Principal">
           {/* Pastilla de navegación: el resaltado teal se desliza hasta la sección activa */}
@@ -183,46 +181,83 @@ export function NavbarClient({ account }: { account: Account | null }) {
                   {t("onb.pill")}
                 </Link>
               )}
-              <Link
-                href={profileHref}
-                aria-label={
-                  hasNew ? `${t("nav.profile")} (${t("notif.aria")})` : t("nav.profile")
-                }
-                title={userName}
-                className="relative rounded-full transition duration-200 hover:scale-110 hover:shadow-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg"
-              >
-                <Avatar url={account?.avatarUrl} size={34} />
-                {hasNew && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-red-500 dark:border-neutral-950"
-                  />
-                )}
-              </Link>
-              {themeBtn}
-              {langBtn}
-              {account?.isAdmin && (
-                <Link href="/admin" className={`${btn} hidden lg:block`}>
-                  Admin
-                  {account.openReports > 0 && (
-                    <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
-                      {account.openReports}
-                    </span>
+              <InstallButton compact />
+              <div ref={menuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMenu((m) => !m)}
+                  aria-haspopup="menu"
+                  aria-expanded={menu}
+                  aria-label={hasNew ? `${t("nav.account")} (${t("notif.aria")})` : t("nav.account")}
+                  title={userName}
+                  className="relative block rounded-full transition duration-200 hover:scale-110 hover:shadow-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg"
+                >
+                  <Avatar url={account?.avatarUrl} size={34} />
+                  {hasNew && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-red-500 dark:border-neutral-950"
+                    />
                   )}
-                </Link>
-              )}
-              <Link href="/ajustes" className={`${btn} hidden lg:block`}>
-                {t("nav.settings")}
-              </Link>
-              <form action={signOut} className="hidden lg:block">
-                <button type="submit" className={btn}>
-                  {t("nav.logout")}
                 </button>
-              </form>
+                <AnimatePresence>
+                  {menu && account && (
+                    <motion.div
+                      role="menu"
+                      initial={reduce ? false : { opacity: 0, y: -6, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={reduce ? undefined : { opacity: 0, y: -6, scale: 0.97 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full z-50 mt-2 w-60 origin-top-right rounded-2xl border border-neutral-200 bg-white p-1.5 shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+                    >
+                      <div className="flex items-center gap-3 px-3 pb-2.5 pt-2">
+                        <Avatar url={account.avatarUrl} size={38} />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold">{account.name}</p>
+                          {account.username && <p className="truncate text-xs text-neutral-500">@{account.username}</p>}
+                        </div>
+                      </div>
+                      <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
+                      <Link role="menuitem" href={profileHref} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
+                        <UserIcon className="h-4 w-4" />
+                        <span className="flex-1">{account.username ? t("nav.profile") : t("onb.pill")}</span>
+                        {hasNew && <span aria-label={t("notif.aria")} className="h-2.5 w-2.5 rounded-full bg-red-500" />}
+                      </Link>
+                      {account.username && (
+                        <Link role="menuitem" href="/ajustes" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
+                          <GearIcon className="h-4 w-4" />
+                          {t("nav.settings")}
+                        </Link>
+                      )}
+                      <form action={signOut}>
+                        <button type="submit" role="menuitem" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800 w-full text-left">
+                          <LogoutIcon className="h-4 w-4" />
+                          {t("nav.logout")}
+                        </button>
+                      </form>
+                      {account.isAdmin && (
+                        <>
+                          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
+                          <Link role="menuitem" href="/admin" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
+                            <ShieldIcon className="h-4 w-4" />
+                            <span className="flex-1">Admin</span>
+                            {account.openReports > 0 && (
+                              <span className="rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                                {account.openReports}
+                              </span>
+                            )}
+                          </Link>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              {langBtn}
             </div>
           ) : (
             <>
-              {themeBtn}
+              <InstallButton compact />
               {langBtn}
               <Link
               href="/login"
@@ -252,9 +287,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
 
       {open && (
         <div id="mobile-menu" className="mx-auto mt-2 max-w-6xl space-y-1 border-t border-neutral-200 px-4 pt-3 lg:hidden dark:border-neutral-800">
-          <form action="/buscar" role="search" className="mb-2 sm:hidden">
-            {searchInput}
-          </form>
+          <SearchBox className="mb-2 sm:hidden" inputClassName={searchClass} />
           {links.map(({ href, label, Icon }) => {
             const active = pathname === href;
             return (
@@ -271,32 +304,42 @@ export function NavbarClient({ account }: { account: Account | null }) {
               </Link>
             );
           })}
-          {account && (
-            <>
-              <Link href={profileHref} className={`${base} block text-neutral-700 dark:text-neutral-200`}>
-                {account.username ? t("nav.profile") : t("onb.pill")}
-              </Link>
-              {account.username && (
-                <Link href="/ajustes" className={`${base} block text-neutral-700 dark:text-neutral-200`}>
-                  {t("nav.settings")}
-                </Link>
-              )}
-              {account.isAdmin && (
-                <Link href="/admin" className={`${base} block text-neutral-700 dark:text-neutral-200`}>
-                  Admin{account.openReports > 0 ? ` (${account.openReports})` : ""}
-                </Link>
-              )}
-            </>
-          )}
-          {userName && (
-            <form action={signOut}>
-              <button type="submit" className={`${btn} block w-full text-left`}>
-                {t("nav.logout")}
-              </button>
-            </form>
-          )}
         </div>
       )}
     </header>
+  );
+}
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+    </svg>
+  );
+}
+
+function GearIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1" />
+    </svg>
+  );
+}
+
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
   );
 }

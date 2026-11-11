@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { img, type MediaType } from "@/lib/tmdb";
 import { useI18n } from "./I18nProvider";
 import { ProgressBar } from "./ProgressBar";
+import { useMyTitle } from "./MyTitles";
 import type { Status } from "@/lib/dict";
 
 const badgeColor: Record<Status, string> = {
@@ -23,6 +24,7 @@ export function TitleCard({
   year,
   status,
   rating,
+  tmdbRating,
   index = 0,
   reveal = true,
   progress,
@@ -35,12 +37,17 @@ export function TitleCard({
   year?: string;
   status?: Status | null;
   rating?: number | null;
+  tmdbRating?: number | null;
   index?: number;
   reveal?: boolean;
 }) {
   const { t } = useI18n();
   const reduce = useReducedMotion();
   const src = img(posterPath, "w342");
+  // Si la página no pasa estado ni nota, se usan los tuyos (así se ven en todo el catálogo)
+  const mine = useMyTitle(type, id);
+  const shownStatus = status === undefined ? mine?.status ?? null : status;
+  const shownRating = rating === undefined ? mine?.rating ?? null : rating;
 
   return (
     <motion.div
@@ -62,15 +69,38 @@ export function TitleCard({
               {title}
             </div>
           )}
-          {status && (
-            <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-semibold text-white ${badgeColor[status]}`}>
-              {t(`status.${status}` as const)}
+          {shownStatus && (
+            <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-semibold text-white shadow ${badgeColor[shownStatus]}`}>
+              {t(`status.${shownStatus}` as const)}
             </span>
           )}
-          {rating !== null && rating !== undefined && (
-            <span className="absolute right-2 top-2 rounded-full bg-black/75 px-2 py-0.5 text-xs font-bold text-white">
-              ★ {rating}
-            </span>
+          {/* Notas arriba a la derecha: la tuya (silueta de persona, en color de la marca) y la de TMDB (estrella) */}
+          {(shownRating !== null || !!tmdbRating) && (
+            <div className="absolute right-2 top-2 flex flex-col items-end gap-1">
+              {shownRating !== null && (
+                <span
+                  className="flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white shadow ring-1 ring-white/30"
+                  title={`${t("card.yourRating")}: ${shownRating}`}
+                  aria-label={`${t("card.yourRating")}: ${shownRating}`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4.5" />
+                    <path d="M3.5 21c0-4.6 3.8-7.5 8.5-7.5s8.5 2.9 8.5 7.5z" />
+                  </svg>
+                  {shownRating}
+                </span>
+              )}
+              {!!tmdbRating && (
+                <span
+                  className="flex items-center gap-1 rounded-full bg-black/75 px-2 py-0.5 text-xs font-bold text-white shadow backdrop-blur-sm"
+                  title={`${t("card.tmdbRating")}: ${tmdbRating.toFixed(1)}`}
+                  aria-label={`${t("card.tmdbRating")}: ${tmdbRating.toFixed(1)}`}
+                >
+                  <span className="text-amber-400" aria-hidden="true">★</span>
+                  {tmdbRating.toFixed(1)}
+                </span>
+              )}
+            </div>
           )}
         </div>
         <div className="p-2.5">

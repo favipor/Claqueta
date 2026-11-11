@@ -21,9 +21,8 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
         title: "Privacy policy",
         intro: `Last updated: ${L.updated}. This explains what personal data ${L.site} handles and why.`,
         sections: [
-          { title: "1. Who is responsible", body: [`${L.owner} (${L.id}), ${L.address}. Contact: ${L.email}.`] },
           {
-            title: "2. What data we collect",
+            title: "1. What data we collect",
             body: [
               "Account data: email, name and profile photo (if you sign in with Google), username, bio and avatar.",
               "Activity you create: titles you track, ratings, lists, comments, follows, blocks, reports and private messages.",
@@ -31,7 +30,7 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
             ],
           },
           {
-            title: "3. Why and on what legal basis",
+            title: "2. Why and on what legal basis",
             body: [
               "To provide the service you signed up for (account, tracking, social features): performance of a contract.",
               "To keep the service safe (rate limits, reports, moderation): legitimate interest.",
@@ -39,27 +38,21 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
             ],
           },
           {
-            title: "4. Who else processes your data",
+            title: "3. Who else processes your data",
             body: [
               "Supabase (database, authentication and file storage), Vercel (hosting) and Google (optional sign-in). They act as processors and may process data outside the EU under standard contractual clauses.",
               "Film and series information comes from TMDB; no personal data is sent to TMDB.",
             ],
           },
           {
-            title: "5. Visibility",
+            title: "4. Visibility",
             body: [
               "Your profile and activity are visible according to the privacy you choose (public or private). Ratings are private to you. Private messages are only visible to the people in the conversation.",
             ],
           },
-          { title: "6. How long we keep it", body: ["While your account exists. If you delete it, your data is deleted too, except what the law requires us to keep."] },
-          {
-            title: "7. Your rights",
-            body: [
-              `You can request access, rectification, erasure, restriction, portability and objection by writing to ${L.email}. You can also export your list to Excel from the app. If you are unhappy, you can complain to the Spanish Data Protection Agency (aepd.es).`,
-            ],
-          },
-          { title: "8. Minors", body: ["The service is intended for people aged 14 or over."] },
-          { title: "9. Security", body: ["We apply access controls, encrypted connections and per-user permissions in the database. No system is 100% secure; if you find a problem, please tell us."] },
+          { title: "5. How long we keep it", body: ["While your account exists. If you delete it, your data is deleted too, except what the law requires us to keep."] },
+          { title: "6. Minors", body: ["The service is intended for people aged 14 or over."] },
+          { title: "7. Security", body: ["We apply access controls, encrypted connections and per-user permissions in the database. No system is 100% secure; if you find a problem, please tell us."] },
         ],
       },
       cookies: {
@@ -81,7 +74,6 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
         title: "Legal notice",
         intro: `Last updated: ${L.updated}.`,
         sections: [
-          { title: "Owner", body: [`${L.owner} (${L.id}), ${L.address}. Contact: ${L.email}.`] },
           { title: "Purpose", body: [`${L.site} is a free website to track films and series, rate them and share them with friends.`] },
           {
             title: "Rules of use",
@@ -102,9 +94,8 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
       title: "Política de privacidad",
       intro: `Última actualización: ${L.updated}. Aquí te explicamos qué datos personales trata ${L.site} y para qué.`,
       sections: [
-        { title: "1. Responsable", body: [`${L.owner} (${L.id}), ${L.address}. Contacto: ${L.email}.`] },
         {
-          title: "2. Qué datos recogemos",
+          title: "1. Qué datos recogemos",
           body: [
             "Datos de cuenta: correo, nombre y foto (si entras con Google), nombre de usuario, biografía y avatar.",
             "Lo que generas al usar la web: títulos que marcas, notas, listas, comentarios, seguimientos, bloqueos, denuncias y mensajes privados.",
@@ -112,7 +103,7 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
           ],
         },
         {
-          title: "3. Para qué y con qué base legal",
+          title: "2. Para qué y con qué base legal",
           body: [
             "Para prestarte el servicio al que te registras (cuenta, seguimiento, funciones sociales): ejecución de un contrato.",
             "Para mantener el servicio seguro (límites de uso, denuncias, moderación): interés legítimo.",
@@ -120,27 +111,21 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
           ],
         },
         {
-          title: "4. Quién más trata tus datos",
+          title: "3. Quién más trata tus datos",
           body: [
             "Supabase (base de datos, autenticación y archivos), Vercel (alojamiento) y Google (inicio de sesión opcional). Actúan como encargados del tratamiento y pueden tratar datos fuera de la UE bajo cláusulas contractuales tipo.",
             "La información de películas y series viene de TMDB; no se envían datos personales a TMDB.",
           ],
         },
         {
-          title: "5. Visibilidad",
+          title: "4. Visibilidad",
           body: [
             "Tu perfil y tu actividad se ven según la privacidad que elijas (público o privado). Tus notas son privadas. Los mensajes privados solo los ven las personas de la conversación.",
           ],
         },
-        { title: "6. Cuánto tiempo los guardamos", body: ["Mientras tengas cuenta. Si la eliminas, se borran también tus datos, salvo lo que la ley nos obligue a conservar."] },
-        {
-          title: "7. Tus derechos",
-          body: [
-            `Puedes pedir acceso, rectificación, supresión, limitación, portabilidad y oposición escribiendo a ${L.email}. Además puedes exportar tu lista a Excel desde la app. Si no estás conforme, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).`,
-          ],
-        },
-        { title: "8. Menores", body: ["El servicio está pensado para mayores de 14 años."] },
-        { title: "9. Seguridad", body: ["Aplicamos controles de acceso, conexiones cifradas y permisos por usuario en la base de datos. Ningún sistema es 100 % seguro; si encuentras un problema, avísanos."] },
+        { title: "5. Cuánto tiempo los guardamos", body: ["Mientras tengas cuenta. Si la eliminas, se borran también tus datos, salvo lo que la ley nos obligue a conservar."] },
+        { title: "6. Menores", body: ["El servicio está pensado para mayores de 14 años."] },
+        { title: "7. Seguridad", body: ["Aplicamos controles de acceso, conexiones cifradas y permisos por usuario en la base de datos. Ningún sistema es 100 % seguro; si encuentras un problema, avísanos."] },
       ],
     },
     cookies: {
@@ -162,7 +147,6 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
       title: "Aviso legal",
       intro: `Última actualización: ${L.updated}.`,
       sections: [
-        { title: "Titular", body: [`${L.owner} (${L.id}), ${L.address}. Contacto: ${L.email}.`] },
         { title: "Objeto", body: [`${L.site} es una web gratuita para llevar el seguimiento de películas y series, puntuarlas y compartirlas con amigos.`] },
         {
           title: "Normas de uso",

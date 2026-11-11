@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Lexend } from "next/font/google";
 import { A11yPanel } from "@/components/A11yPanel";
 import { ScrollTop } from "@/components/ScrollTop";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { MyTitlesSync } from "@/components/MyTitles";
 import { Footer } from "@/components/Footer";
 import { Splash } from "@/components/Splash";
 import { I18nProvider } from "@/components/I18nProvider";
@@ -15,6 +17,16 @@ const lexend = Lexend({ subsets: ["latin"], variable: "--font-lexend", display: 
 export const metadata: Metadata = {
   title: { default: "Claqueta", template: "%s · Claqueta" },
   description: "Lleva el seguimiento de lo que ves, puntúalo y coméntalo con tus amigos.",
+  applicationName: "Claqueta",
+  appleWebApp: { capable: true, title: "Claqueta", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0f766e" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 // 1) Aplica el tema guardado antes de pintar (evita el parpadeo).
@@ -35,8 +47,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <Navbar />
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
           <Footer />
-          <A11yPanel />
           <ScrollTop />
+          <ThemeToggle />
+          <A11yPanel />
+          <MyTitlesSync />
         </I18nProvider>
       </body>
     </html>

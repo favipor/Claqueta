@@ -16,7 +16,7 @@ export function HeroBackdrop({ posters }: { posters: string[] }) {
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute -inset-x-40 -inset-y-24 flex -rotate-6 justify-center gap-3 opacity-55">
+      <div className="absolute -inset-x-40 -inset-y-24 flex -rotate-6 justify-center gap-3 opacity-80">
         {columns.map((col, c) => (
           <div key={c} className={`${c >= 8 ? "hidden lg:block" : c >= 4 ? "hidden sm:block" : ""} w-36 shrink-0 sm:w-44 xl:w-56`}>
             <div
@@ -32,10 +32,10 @@ export function HeroBackdrop({ posters }: { posters: string[] }) {
           </div>
         ))}
       </div>
-      {/* Velo de color: deja ver las carátulas y mantiene el color de la marca */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand/80 via-brand/60 to-teal-900/80" />
+      {/* Velo oscuro casi neutro con un toque leve de la marca: deja ver bien las carátulas */}
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-950/60 via-brand/35 to-neutral-950/60" />
       {/* Refuerzo suave en el centro para que el texto se lea siempre */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(4,47,46,0.45),transparent_75%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.5),transparent_70%)]" />
     </div>
   );
 }

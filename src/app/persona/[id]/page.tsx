@@ -126,6 +126,7 @@ export default async function PersonPage({ params }: Props) {
                 type={c.media_type}
                 title={c.title}
                 posterPath={c.poster_path}
+                tmdbRating={c.vote_average}
                 year={c.year}
                 index={i}
               />

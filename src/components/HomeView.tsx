@@ -7,6 +7,7 @@ import { HeroBackdrop } from "./HeroBackdrop";
 import { ScrollRow } from "./ScrollRow";
 import { GuideVideoButton } from "./GuideVideo";
 import { InfiniteCatalog } from "./InfiniteCatalog";
+import { SearchBox } from "./SearchBox";
 import { BookmarkIcon, FilmIcon, TvIcon } from "./NavIcons";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,6 +24,7 @@ function TrendingRow({ title, items }: { title: string; items: TmdbItem[] }) {
               type={it.media_type}
               title={it.title}
               posterPath={it.poster_path}
+              tmdbRating={it.vote_average}
               year={it.year}
               reveal={false}
             />
@@ -96,15 +98,11 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
           <div className="relative z-10 mx-auto w-full max-w-3xl text-center">
             <h1 className="text-4xl font-extrabold drop-shadow sm:text-6xl">{t("home.hero")}</h1>
             <p className="mx-auto mt-3 max-w-xl text-white/90 drop-shadow">{t("home.heroSub")}</p>
-            <form action="/buscar" role="search" className="mx-auto mt-6 max-w-xl">
-              <input
-                type="search"
-                name="q"
-                placeholder={t("nav.search")}
-                aria-label={t("nav.search")}
-                className="w-full rounded-full px-5 py-3 text-neutral-900 shadow-lg outline-none focus-visible:ring-4 focus-visible:ring-white/50"
-              />
-            </form>
+            <SearchBox
+              dark
+              className="mx-auto mt-6 max-w-xl"
+              inputClassName="w-full rounded-full bg-white px-5 py-3 text-neutral-900 shadow-lg outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+            />
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <HeroLink href="/peliculas" active={kind === "movie"} icon={<FilmIcon className="h-6 w-6" />}>
                 {t("nav.movies")}

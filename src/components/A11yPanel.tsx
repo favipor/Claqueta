@@ -67,7 +67,7 @@ export function A11yPanel() {
         <div
           role="dialog"
           aria-label={t("a11y.title")}
-          className="fixed bottom-20 right-5 z-50 w-72 space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          className="fixed bottom-5 right-[4.5rem] z-50 w-72 max-w-[calc(100vw-5.5rem)] space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
         >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold">{t("a11y.title")}</h2>
