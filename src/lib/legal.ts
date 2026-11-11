@@ -1,13 +1,10 @@
-// Textos legales. RELLENA los datos de LEGAL antes de publicar de verdad (nombre, correo, etc.).
+// Textos legales. El único dato de contacto público es el correo de Claqueta.
 // Son plantillas razonables para una web personal sin analítica ni publicidad; si el proyecto
 // crece (anuncios, pagos, empresa), conviene que los revise un profesional.
 export const LEGAL = {
-  owner: "[Tu nombre completo]",
-  id: "[Tu DNI/NIE]",
-  address: "[Tu dirección o localidad, España]",
-  email: "[tu-correo-de-contacto]",
+  email: "claqueta.contacto@gmail.com",
   site: "Claqueta",
-  updated: "21/10/2026",
+  updated: "11/11/2026",
 };
 
 type Section = { title: string; body: string[] };
@@ -53,6 +50,12 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
           { title: "5. How long we keep it", body: ["While your account exists. If you delete it, your data is deleted too, except what the law requires us to keep."] },
           { title: "6. Minors", body: ["The service is intended for people aged 14 or over."] },
           { title: "7. Security", body: ["We apply access controls, encrypted connections and per-user permissions in the database. No system is 100% secure; if you find a problem, please tell us."] },
+          {
+            title: "8. Contact and your rights",
+            body: [
+              `For any question about your data, or to ask for access, correction, deletion or a copy of it, write to ${L.email}. You can also export your list to Excel from the app, and if you want your account deleted, write to us and we will remove it with all your data. If you are not satisfied with the answer, you can complain to the Spanish Data Protection Agency (aepd.es).`,
+            ],
+          },
         ],
       },
       cookies: {
@@ -85,6 +88,7 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
           { title: "Content and credits", body: ["Film and series data and images are provided by TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Trademarks and posters belong to their owners."] },
           { title: "Liability", body: ["The service is provided “as is”, without guarantees of availability. We are not responsible for the content published by users."] },
           { title: "Law", body: ["Spanish law applies."] },
+          { title: "Contact", body: [`For any question, suggestion or to report a problem: ${L.email}.`] },
         ],
       },
     };
@@ -126,6 +130,12 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
         { title: "5. Cuánto tiempo los guardamos", body: ["Mientras tengas cuenta. Si la eliminas, se borran también tus datos, salvo lo que la ley nos obligue a conservar."] },
         { title: "6. Menores", body: ["El servicio está pensado para mayores de 14 años."] },
         { title: "7. Seguridad", body: ["Aplicamos controles de acceso, conexiones cifradas y permisos por usuario en la base de datos. Ningún sistema es 100 % seguro; si encuentras un problema, avísanos."] },
+        {
+          title: "8. Contacto y tus derechos",
+          body: [
+            `Para cualquier duda sobre tus datos, o para pedir acceso, rectificación, supresión o una copia de ellos, escribe a ${L.email}. También puedes exportar tu lista a Excel desde la propia web, y si quieres borrar tu cuenta, escríbenos y la eliminamos con todos tus datos. Si no quedas conforme con la respuesta, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).`,
+          ],
+        },
       ],
     },
     cookies: {
@@ -158,6 +168,7 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
         { title: "Contenido y créditos", body: ["Los datos e imágenes de películas y series los proporciona TMDB. Esta web usa la API de TMDB pero no está avalada ni certificada por TMDB. Las marcas y carteles pertenecen a sus propietarios."] },
         { title: "Responsabilidad", body: ["El servicio se ofrece «tal cual», sin garantía de disponibilidad. No nos hacemos responsables del contenido publicado por los usuarios."] },
         { title: "Legislación", body: ["Se aplica la legislación española."] },
+        { title: "Contacto", body: [`Para cualquier duda, sugerencia o para avisar de un problema: ${L.email}.`] },
       ],
     },
   };

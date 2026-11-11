@@ -3,7 +3,7 @@ import { getT } from "@/lib/i18n-server";
 import { getGuide } from "@/lib/guide";
 import { GuideVideoButton } from "@/components/GuideVideo";
 
-export const metadata = { title: "Claqueta" };
+export const metadata = { title: "Guía" };
 
 export default async function GuidePage() {
   const { lang, t } = await getT();

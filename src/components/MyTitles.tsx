@@ -57,12 +57,28 @@ async function load() {
   }
 }
 
-// Se monta una vez en el layout: carga al entrar y se refresca al cambiar de página
-// (así, al volver de una ficha donde has marcado algo, la carátula ya sale actualizada).
+// Cambio puntual tras marcar o puntuar algo: la carátula se actualiza al momento sin recargar todo
+export function setMyTitle(type: string, id: number, patch: Partial<MyTitle>) {
+  const key = keyOf(type, id);
+  const cur = map.get(key) ?? { status: null, rating: null };
+  const next = { ...cur, ...patch };
+  map = new Map(map);
+  if (next.status === null && next.rating === null) map.delete(key);
+  else map.set(key, next);
+  listeners.forEach((l) => l());
+}
+
+// Recarga completa (tras acciones que pueden cambiar varios estados, como las reglas de las series)
+export function reloadMyTitles() {
+  return load();
+}
+
+// Se monta una vez en el layout: carga al entrar e inicio/cierre de sesión. Al cambiar de página
+// solo se recarga si han pasado más de 5 minutos (por si has marcado algo desde otro dispositivo).
 export function MyTitlesSync() {
   const pathname = usePathname();
   useEffect(() => {
-    if (Date.now() - lastLoad > 1500) load();
+    if (Date.now() - lastLoad > 5 * 60 * 1000) load();
   }, [pathname]);
 
   useEffect(() => {

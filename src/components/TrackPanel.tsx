@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updateEntry } from "@/app/actions";
+import { setMyTitle } from "./MyTitles";
 import { STATUSES, type Status } from "@/lib/dict";
 import type { MediaType } from "@/lib/tmdb";
 import { StarRating } from "./StarRating";
@@ -46,13 +47,19 @@ export function TrackPanel({
 
   function save(patch: Parameters<typeof updateEntry>[0]["patch"], after?: () => void) {
     startTransition(async () => {
-      await updateEntry({
+      const res = await updateEntry({
         tmdb_id: tmdbId,
         media_type: mediaType,
         title,
         poster_path: posterPath,
         patch,
       });
+      if (res.ok) {
+        const p: { status?: Status | null; rating?: number | null } = {};
+        if ("status" in patch) p.status = (patch.status ?? null) as Status | null;
+        if ("rating" in patch) p.rating = patch.rating ?? null;
+        if (Object.keys(p).length) setMyTitle(mediaType, tmdbId, p);
+      }
       after?.();
     });
   }

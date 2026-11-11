@@ -14,6 +14,7 @@ import {
 import { TrackPanel } from "./TrackPanel";
 import { SeasonsTracker } from "./SeasonsTracker";
 import { useI18n } from "./I18nProvider";
+import { reloadMyTitles } from "./MyTitles";
 
 type Initial = { status: Status | null; rating: number | null; private_note: string | null };
 
@@ -53,7 +54,10 @@ export function TvTracking({
 
       // Solo se aplica el resultado del servidor cuando no quedan más acciones en cola.
       if (res.ok && res.state) {
-        if (count.current === 0) setState(res.state);
+        if (count.current === 0) {
+          setState(res.state);
+          reloadMyTitles(); // las reglas automáticas pueden haber cambiado el estado de la serie
+        }
       } else {
         setError(true);
         if (count.current === 0) {

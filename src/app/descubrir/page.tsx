@@ -8,7 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfile } from "@/components/ShareProfile";
 
-export const metadata = { title: "Claqueta" };
+export const metadata = { title: "Descubrir" };
 
 type Person = {
   id: string;

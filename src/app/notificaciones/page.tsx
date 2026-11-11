@@ -4,7 +4,7 @@ import { getT } from "@/lib/i18n-server";
 import { getDetail, type MediaType } from "@/lib/tmdb";
 import { NotificationsList, type NotifItem } from "@/components/NotificationsList";
 
-export const metadata = { title: "Claqueta" };
+export const metadata = { title: "Notificaciones" };
 
 export default async function NotificationsPage() {
   const { lang, t } = await getT();

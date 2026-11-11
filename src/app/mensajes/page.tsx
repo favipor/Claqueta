@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
 import { InboxList, type InboxRow } from "@/components/InboxList";
 
-export const metadata = { title: "Claqueta" };
+export const metadata = { title: "Mensajes" };
 
 export default async function InboxPage() {
   const { t } = await getT();

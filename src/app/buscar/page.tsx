@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/Avatar";
 import { getT } from "@/lib/i18n-server";
 import { TitleCard } from "@/components/TitleCard";
+import type { Metadata } from "next";
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
+  const { q = "" } = await searchParams;
+  return { title: q.trim() ? `Buscar «${q.trim().slice(0, 60)}»` : "Buscar", robots: { index: false } };
+}
 
 export default async function SearchPage({
   searchParams,

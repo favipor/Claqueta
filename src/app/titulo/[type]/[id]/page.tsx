@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getDetail, getRelated, getTvSeasons, getUpcoming, img, type MediaType, type TvSeason } from "@/lib/tmdb";
 import { readTvState } from "@/lib/tv-state";
@@ -35,33 +36,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!p) return {};
   const { lang } = await getT();
   const d = await getDetail(p.type, p.id, lang);
-  return { title: d?.title ?? "Claqueta" };
+  if (!d) return { title: "Claqueta" };
+  // Vista previa al compartir (WhatsApp, redes...): carátula, título, año y sinopsis
+  const year = d.year ? ` (${d.year})` : "";
+  const nota = d.vote_average ? `★ ${d.vote_average.toFixed(1)} · ` : "";
+  const description = `${nota}${(d.overview || "").slice(0, 180)}`.trim() || undefined;
+  const images = [img(d.backdrop_path, "w1280"), img(d.poster_path, "w500")].filter((x): x is string => !!x);
+  return {
+    title: `${d.title}${year}`,
+    description,
+    alternates: { canonical: `/titulo/${p.type}/${p.id}` },
+    openGraph: {
+      type: p.type === "movie" ? "video.movie" : "video.tv_show",
+      title: `${d.title}${year} · Claqueta`,
+      description,
+      images: images.slice(0, 1).map((url) => ({ url, width: 1280, height: 720, alt: d.title })),
+    },
+    twitter: { card: "summary_large_image", title: `${d.title}${year}`, description, images: images.slice(0, 1) },
+  };
 }
 
 export default async function TitlePage({ params }: Props) {
   const raw = await params;
   const { lang, t } = await getT();
   const p = parse(raw.type, raw.id);
-  const d = p ? await getDetail(p.type, p.id, lang) : null;
+  if (!p) notFound();
 
-  if (!p || !d) {
-    return (
-      <p className="py-20 text-center text-neutral-500">
-        {t("detail.notFound")} <Link href="/" className="text-brand-fg underline">←</Link>
-      </p>
-    );
-  }
-
+  // Todo lo que no depende de nada se pide a la vez (antes iba uno detrás de otro)
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Qué viene después (próxima temporada o secuela) y títulos parecidos, en paralelo
-  const [upcoming, related] = await Promise.all([
-    getUpcoming(p.type, p.id, lang),
-    getRelated(p.type, p.id, lang),
+  const [d, authRes, upcoming, related, comments] = await Promise.all([
+    getDetail(p.type, p.id, lang),
+    supabase.auth.getUser(),
+    getUpcoming(p.type, p.id, lang).catch(() => null),
+    getRelated(p.type, p.id, lang).catch(() => []),
+    // Conversación del título (lo que cada persona puede ver lo decide la base de datos)
+    fetchComments(supabase, p.id, p.type).catch(() => null as CommentPage | null),
   ]);
+  if (!d) notFound();
+  const user = authRes.data.user;
 
   let initial: { status: Status | null; rating: number | null; private_note: string | null } = {
     status: null,
@@ -69,9 +81,12 @@ export default async function TitlePage({ params }: Props) {
     private_note: null,
   };
   let community: { average: number | null; votes: number } = { average: null, votes: 0 };
+  // Series: temporadas de TMDB + lo que el usuario lleva visto.
+  let tv: { seasons: TvSeason[]; state: TvState } | null = null;
+  let viewer: Viewer | null = null;
 
   if (user) {
-    const [{ data: mine }, { data: comm }] = await Promise.all([
+    const [mineRes, commRes, tvRes, profRes, blockRes, adminRes] = await Promise.all([
       supabase
         .from("user_titles")
         .select("status, rating, private_note")
@@ -80,7 +95,16 @@ export default async function TitlePage({ params }: Props) {
         .eq("media_type", p.type)
         .maybeSingle(),
       supabase.rpc("community_rating", { p_tmdb_id: p.id, p_media_type: p.type }),
+      p.type === "tv"
+        ? Promise.all([getTvSeasons(p.id, lang), readTvState(supabase, user.id, p.id)])
+            .then(([seasons, state]) => ({ seasons, state }))
+            .catch(() => null) // si falla (p. ej. falta phase2.sql) se muestra el panel normal
+        : Promise.resolve(null),
+      supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
+      supabase.from("comment_blocks").select("user_id").eq("user_id", user.id).maybeSingle(),
+      supabase.rpc("is_admin"),
     ]);
+    const mine = mineRes.data;
     if (mine) {
       initial = {
         status: mine.status as Status | null,
@@ -88,43 +112,15 @@ export default async function TitlePage({ params }: Props) {
         private_note: mine.private_note,
       };
     }
+    const comm = commRes.data;
     const row = Array.isArray(comm) ? comm[0] : null;
     if (row) community = { average: row.average === null ? null : Number(row.average), votes: Number(row.votes) };
-  }
-
-  // Series: temporadas de TMDB + lo que el usuario lleva visto.
-  let tv: { seasons: TvSeason[]; state: TvState } | null = null;
-  if (user && p.type === "tv") {
-    try {
-      const [seasons, state] = await Promise.all([
-        getTvSeasons(p.id, lang),
-        readTvState(supabase, user.id, p.id),
-      ]);
-      tv = { seasons, state };
-    } catch {
-      tv = null; // si falla (p. ej. falta ejecutar phase2.sql) se muestra el panel normal
-    }
-  }
-
-  // Conversación del título (lo que cada persona puede ver lo decide la base de datos)
-  let comments: CommentPage | null = null;
-  try {
-    comments = await fetchComments(supabase, p.id, p.type);
-  } catch {
-    comments = null; // si aún no se ha ejecutado phase4.sql no se muestra la conversación
-  }
-  let viewer: Viewer | null = null;
-  if (user) {
-    const [{ data: prof }, { data: block }, { data: admin }] = await Promise.all([
-      supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
-      supabase.from("comment_blocks").select("user_id").eq("user_id", user.id).maybeSingle(),
-      supabase.rpc("is_admin"),
-    ]);
+    tv = tvRes;
     viewer = {
       id: user.id,
-      username: prof?.username ?? null,
-      isAdmin: admin === true,
-      blocked: !!block,
+      username: profRes.data?.username ?? null,
+      isAdmin: adminRes.data === true,
+      blocked: !!blockRes.data,
     };
   }
 

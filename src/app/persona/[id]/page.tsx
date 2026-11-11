@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getPerson, img } from "@/lib/tmdb";
 import { getT } from "@/lib/i18n-server";
@@ -19,7 +20,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!id) return {};
   const { lang } = await getT();
   const p = await getPerson(id, lang);
-  return { title: p?.name ?? "Claqueta" };
+  if (!p) return { title: "Claqueta" };
+  const description = (p.biography || "").slice(0, 180) || undefined;
+  const photo = img(p.profile_path, "w500");
+  return {
+    title: p.name,
+    description,
+    alternates: { canonical: `/persona/${id}` },
+    openGraph: {
+      type: "profile",
+      title: `${p.name} · Claqueta`,
+      description,
+      ...(photo ? { images: [{ url: photo, width: 500, height: 750, alt: p.name }] } : {}),
+    },
+  };
 }
 
 function formatDate(date: string, lang: string) {
@@ -43,13 +57,7 @@ export default async function PersonPage({ params }: Props) {
   const id = parseId((await params).id);
   const p = id ? await getPerson(id, lang) : null;
 
-  if (!p) {
-    return (
-      <p className="py-20 text-center text-neutral-500">
-        {t("person.notFound")} <Link href="/" className="text-brand-fg underline">←</Link>
-      </p>
-    );
-  }
+  if (!p) notFound();
 
   const photo = img(p.profile_path, "w500");
   const deptKey = `person.dept.${p.known_for_department}` as DictKey;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
@@ -25,7 +26,29 @@ type Props = {
 const clean = (raw: string) => decodeURIComponent(raw).toLowerCase();
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return { title: `@${clean((await params).username)} · Claqueta` };
+  const username = clean((await params).username);
+  const supabase = await createClient();
+  const { data: p } = await supabase
+    .from("profiles")
+    .select("display_name, bio, avatar_url")
+    .eq("username", username)
+    .maybeSingle();
+  if (!p) return { title: `@${username}` };
+  const name = p.display_name ? `${p.display_name} (@${username})` : `@${username}`;
+  const description = p.bio || `Lo que ve ${p.display_name ?? "@" + username} en Claqueta: pelis, series y notas.`;
+  // Vista previa al compartir el perfil: nombre, bio y foto
+  return {
+    title: name,
+    description,
+    alternates: { canonical: `/u/${username}` },
+    openGraph: {
+      type: "profile",
+      title: `${name} · Claqueta`,
+      description,
+      ...(p.avatar_url ? { images: [{ url: p.avatar_url as string, width: 400, height: 400, alt: name }] } : {}),
+    },
+    twitter: { card: "summary", title: name, description },
+  };
 }
 
 export default async function ProfilePage({ params, searchParams }: Props) {
@@ -44,16 +67,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
     .eq("username", username)
     .maybeSingle();
 
-  if (!profile) {
-    return (
-      <p className="py-20 text-center text-neutral-500">
-        {t("profile.notFound")}{" "}
-        <Link href="/" className="text-brand-fg underline">
-          ←
-        </Link>
-      </p>
-    );
-  }
+  if (!profile) notFound();
 
   const isOwner = user?.id === profile.id;
 

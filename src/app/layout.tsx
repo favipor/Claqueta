@@ -11,12 +11,24 @@ import { Footer } from "@/components/Footer";
 import { Splash } from "@/components/Splash";
 import { I18nProvider } from "@/components/I18nProvider";
 import { getT } from "@/lib/i18n-server";
+import { SITE_URL } from "@/lib/site";
 
 const lexend = Lexend({ subsets: ["latin"], variable: "--font-lexend", display: "swap" });
 
+const DESCRIPTION = "Lleva el seguimiento de lo que ves, puntúalo y coméntalo con tus amigos.";
+
 export const metadata: Metadata = {
-  title: { default: "Claqueta", template: "%s · Claqueta" },
-  description: "Lleva el seguimiento de lo que ves, puntúalo y coméntalo con tus amigos.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "Claqueta · Tus pelis y series", template: "%s · Claqueta" },
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "Claqueta",
+    locale: "es_ES",
+    title: "Claqueta · Tus pelis y series",
+    description: DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
   applicationName: "Claqueta",
   appleWebApp: { capable: true, title: "Claqueta", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },

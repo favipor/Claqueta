@@ -496,6 +496,13 @@ const es = {
   "admin.used": "usado",
   "admin.tables": "Lo que más ocupa",
   "admin.planNote": "Límites del plan gratuito de Supabase.",
+  "err.notFoundTitle": "Esta escena no existe",
+  "err.notFoundText": "No hemos encontrado lo que buscas. Puede que el enlace esté mal o que se haya borrado.",
+  "err.home": "Ir al inicio",
+  "err.search": "Buscar",
+  "err.title": "Vaya, algo ha fallado",
+  "err.text": "No hemos podido cargar esta página. Prueba otra vez en unos segundos.",
+  "err.retry": "Reintentar",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -994,6 +1001,13 @@ const en: Record<keyof typeof es, string> = {
   "admin.used": "used",
   "admin.tables": "Biggest tables",
   "admin.planNote": "Supabase free plan limits.",
+  "err.notFoundTitle": "This scene doesn't exist",
+  "err.notFoundText": "We couldn't find what you're looking for. The link may be wrong or it was deleted.",
+  "err.home": "Go home",
+  "err.search": "Search",
+  "err.title": "Oops, something went wrong",
+  "err.text": "We couldn't load this page. Please try again in a few seconds.",
+  "err.retry": "Try again",
 };
 
 export type DictKey = keyof typeof es;

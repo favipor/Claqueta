@@ -10,6 +10,8 @@ import { SORTS, type Sort } from "@/lib/list-sort";
 import { genreName } from "@/lib/genres";
 import { readWatchedForTitles } from "@/lib/tv-state";
 
+export const metadata = { title: "Mi lista", robots: { index: false } };
+
 export default async function MyListPage({
   searchParams,
 }: {

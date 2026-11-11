@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getT } from "@/lib/i18n-server";
 import { ClapperIcon } from "./ClapperIcon";
+import { LEGAL } from "@/lib/legal";
 
 // Pie de página: marca, enlaces útiles, textos legales y crédito de TMDB.
 export async function Footer() {
@@ -49,6 +50,13 @@ export async function Footer() {
             Claqueta
           </Link>
           <p className="max-w-xs text-neutral-400">{t("app.tagline")}</p>
+          <a href={`mailto:${LEGAL.email}`} className={`${link} inline-flex items-center gap-2`}>
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+            {LEGAL.email}
+          </a>
         </div>
 
         {cols.map((c) => (

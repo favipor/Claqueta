@@ -4,7 +4,7 @@ import { privacyCooldownUntil } from "@/lib/profile";
 import { BlockedList } from "@/components/BlockedList";
 import { SettingsForm } from "@/components/SettingsForm";
 
-export const metadata = { title: "Claqueta" };
+export const metadata = { title: "Ajustes" };
 
 export default async function SettingsPage() {
   const supabase = await createClient();

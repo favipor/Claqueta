@@ -9,6 +9,7 @@ import { parseTable } from "@/lib/import-parse";
 import { groupItems } from "@/lib/import-group";
 import type { ImportRow, MatchQuery, MatchResult } from "@/lib/import-types";
 import { useI18n } from "./I18nProvider";
+import { reloadMyTitles } from "./MyTitles";
 import { ProgressBar } from "./ProgressBar";
 
 type Stage = "idle" | "parsing" | "matching" | "review" | "importing" | "done";
@@ -129,6 +130,7 @@ export function ImportWizard() {
     }
     setSummary(total);
     setStage("done");
+    reloadMyTitles(); // las carátulas del catálogo ya salen con lo importado
   }
 
   function reset() {

@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { getDiscover, type CatalogKind, type SortKey } from "@/lib/tmdb";
 import { isGenreKey } from "@/lib/genre-filter";
 import { getLang } from "@/lib/i18n-server";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const KINDS: CatalogKind[] = ["all", "movie", "tv"];
 const SORTS: SortKey[] = ["popularity", "rating", "rating_low", "recent", "oldest"];
 
 // Devuelve una página del catálogo. La clave de TMDB se queda en el servidor.
 export async function GET(request: Request) {
+  if (!rateLimit(`discover:${clientIp(request)}`, 60, 20_000)) {
+    return NextResponse.json({ error: "rate_limit" }, { status: 429, headers: { "Retry-After": "20" } });
+  }
   const sp = new URL(request.url).searchParams;
   const kind = sp.get("kind") as CatalogKind;
   const sort = sp.get("sort") as SortKey;

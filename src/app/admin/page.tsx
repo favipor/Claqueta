@@ -4,7 +4,7 @@ import { AdminUsers, type AdminStats, type AdminUserRow } from "@/components/Adm
 import { AdminStorage, type DbUsage } from "@/components/AdminStorage";
 import { AdminPanel, type BlockedItem, type ReportItem } from "@/components/AdminPanel";
 
-export const metadata = { title: "Admin · Claqueta" };
+export const metadata = { title: "Admin" };
 
 const PAGE_SIZE = 20;
 
