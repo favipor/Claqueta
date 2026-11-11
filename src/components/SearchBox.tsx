@@ -16,17 +16,22 @@ export function SearchBox({
   className = "",
   inputClassName = "",
   dark = false,
+  initial = "",
+  autoFocus = false,
 }: {
   className?: string;
   inputClassName?: string;
   dark?: boolean;
+  initial?: string;
+  autoFocus?: boolean;
 }) {
   const { t } = useI18n();
   const router = useRouter();
   const listId = useId();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initial);
   const [options, setOptions] = useState<Option[]>([]);
   const [open, setOpen] = useState(false);
+  const typed = useRef(false); // no se abren sugerencias del texto inicial hasta que la persona escribe
   const [active, setActive] = useState(-1);
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -160,10 +165,13 @@ export function SearchBox({
           name="q"
           value={q}
           onChange={(e) => {
+            typed.current = true;
             setQ(e.target.value);
             setOpen(true);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => typed.current && setOpen(true)}
+          autoFocus={autoFocus}
+          enterKeyHint="search"
           onKeyDown={onKeyDown}
           placeholder={t("nav.search")}
           aria-label={t("nav.search")}

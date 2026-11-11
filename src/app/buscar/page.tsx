@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/Avatar";
 import { getT } from "@/lib/i18n-server";
 import { TitleCard } from "@/components/TitleCard";
+import { SearchBox } from "@/components/SearchBox";
 import type { Metadata } from "next";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
@@ -35,16 +36,13 @@ export default async function SearchPage({
 
   return (
     <div className="space-y-6">
-      <form action="/buscar" role="search">
-        <input
-          type="search"
-          name="q"
-          defaultValue={q}
-          placeholder={t("nav.search")}
-          aria-label={t("nav.search")}
-          className="w-full max-w-xl rounded-full border border-neutral-300 bg-white px-5 py-3 outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900"
-        />
-      </form>
+      <SearchBox
+        key={q}
+        initial={q}
+        autoFocus={!q}
+        className="w-full max-w-xl"
+        inputClassName="w-full rounded-full border border-neutral-300 bg-white px-5 py-3 text-base outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900"
+      />
 
       {q && (
         <h1 className="text-xl font-bold">

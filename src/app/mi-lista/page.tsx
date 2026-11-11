@@ -117,32 +117,31 @@ export default async function MyListPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">{t("list.title")}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <h1 className="text-3xl font-extrabold tracking-tight">{t("list.title")}</h1>
+        {/* En el móvil: «¿Qué veo hoy?» ocupa el ancho y Excel queda en dos botones de icono */}
+        <div className="flex items-center gap-2">
           <RandomPick />
           <Link
             href="/importar"
             title={t("imp.link")}
-            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-neutral-200 px-3 text-sm font-semibold text-neutral-600 dark:border-neutral-800 sm:border-transparent dark:sm:border-transparent transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 15V3M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
             </svg>
-            {t("imp.link")}
+            <span className="sr-only sm:not-sr-only">{t("imp.link")}</span>
           </Link>
           <a
             href="/api/exportar"
             download
             title={t("list.export")}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-hover"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-semibold text-white sm:px-3.5 shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-hover"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 3v12M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
             </svg>
-            {t("list.export")}
+            <span className="sr-only sm:not-sr-only">{t("list.export")}</span>
           </a>
         </div>
       </div>

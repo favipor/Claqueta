@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { useI18n } from "./I18nProvider";
 import { FilmIcon, TvIcon } from "./NavIcons";
+import { FilterSelect } from "./FilterSelect";
 import { STATUSES, type DictKey, type Status } from "@/lib/dict";
 import { SORTS, type Sort } from "@/lib/list-sort";
 
@@ -78,15 +79,6 @@ export function ListControls({
     { key: "tv", label: t("list.series"), icon: <TvIcon className="h-4 w-4" /> },
   ];
 
-  const selectWrap =
-    "relative flex items-center rounded-xl bg-neutral-100 text-sm transition-colors focus-within:ring-2 focus-within:ring-brand-fg hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700/80";
-  const selectCls =
-    "w-full cursor-pointer appearance-none bg-transparent py-2 pl-9 pr-8 font-semibold text-neutral-900 outline-none dark:text-neutral-100 [&>option]:bg-white [&>option]:text-neutral-900 dark:[&>option]:bg-neutral-900 dark:[&>option]:text-neutral-100";
-  const chevron = (
-    <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-2.5 h-4 w-4 text-neutral-500" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
 
   return (
     <div
@@ -104,7 +96,7 @@ export function ListControls({
               type="button"
               onClick={() => go({ estado: key })}
               aria-current={active ? "page" : undefined}
-              className={`relative flex shrink-0 items-center gap-2 px-4 py-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-fg ${
+              className={`relative flex shrink-0 items-center gap-2 px-3 py-3 text-sm font-semibold sm:px-4 sm:py-3.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-fg ${
                 active ? "text-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200"
               }`}
             >
@@ -129,9 +121,9 @@ export function ListControls({
         })}
       </nav>
 
-      <div className="flex flex-wrap items-center gap-3 p-3">
-        {/* Selector segmentado de tipo */}
-        <div role="radiogroup" aria-label={t("list.allTypes")} className="flex rounded-xl bg-neutral-100 p-1 dark:bg-neutral-800">
+      <div className="flex flex-col gap-2.5 p-3 md:flex-row md:items-center md:gap-3">
+        {/* Selector segmentado de tipo (en el móvil ocupa todo el ancho) */}
+        <div role="radiogroup" aria-label={t("list.allTypes")} className="grid grid-cols-3 rounded-xl bg-neutral-100 p-1 dark:bg-neutral-800 md:flex">
           {types.map(({ key, label, icon }) => {
             const active = tipo === key;
             return (
@@ -141,7 +133,7 @@ export function ListControls({
                 role="radio"
                 aria-checked={active}
                 onClick={() => go({ tipo: key })}
-                className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-fg ${
+                className={`relative flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-fg ${
                   active ? "text-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
                 }`}
               >
@@ -159,41 +151,26 @@ export function ListControls({
           })}
         </div>
 
-        {/* Orden y género */}
-        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
-          <label className={selectWrap}>
-            <span className="sr-only">{t("list.sortBy")}</span>
-            <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 h-4 w-4 text-brand-fg" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4" />
-            </svg>
-            <select value={orden} onChange={(e) => go({ orden: e.target.value })} className={selectCls} title={t("list.sortBy")}>
-              {SORTS.map((s) => (
-                <option key={s} value={s}>
-                  {t(`list.sort.${s}` as DictKey)}
+        {/* Orden y género: a la par en el móvil, a la derecha en pantallas grandes */}
+        <div className="grid grid-cols-2 gap-2 md:ml-auto md:flex">
+          <FilterSelect label={t("list.sortBy")} icon="sort" value={orden} onChange={(v) => go({ orden: v })} className="md:w-52">
+            {SORTS.map((s) => (
+              <option key={s} value={s}>
+                {t(`list.sort.${s}` as DictKey)}
+              </option>
+            ))}
+          </FilterSelect>
+          {genres.length > 0 && (
+            <FilterSelect label={t("list.genre")} icon="genre" value={genero ? String(genero) : ""} onChange={(v) => go({ genero: v })} className="md:w-52">
+              <option value="">
+                {t("list.genre")}: {t("list.allGenres")}
+              </option>
+              {genres.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
                 </option>
               ))}
-            </select>
-            {chevron}
-          </label>
-          {genres.length > 0 && (
-            <label className={selectWrap}>
-              <span className="sr-only">{t("list.genre")}</span>
-              <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 h-4 w-4 text-brand-fg" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" />
-                <circle cx="7.5" cy="7.5" r="1.5" />
-              </svg>
-              <select value={genero ?? ""} onChange={(e) => go({ genero: e.target.value })} className={selectCls} title={t("list.genre")}>
-                <option value="">
-                  {t("list.genre")}: {t("list.allGenres")}
-                </option>
-                {genres.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-              {chevron}
-            </label>
+            </FilterSelect>
           )}
         </div>
       </div>

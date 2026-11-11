@@ -116,7 +116,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
     "w-full rounded-full border border-neutral-300 bg-neutral-100 px-4 py-1.5 text-sm outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900";
 
   const langBtn = (
-    <button onClick={toggleLang} className={btn} aria-label={t("nav.lang")}>
+    <button onClick={toggleLang} className={`${btn} hidden sm:block`} aria-label={t("nav.lang")}>
             {lang.toUpperCase()}
           </button>
   );
@@ -136,12 +136,22 @@ export function NavbarClient({ account }: { account: Account | null }) {
           aria-label="Claqueta"
         >
           <ClapperIcon className={`transition-all ${scrolled ? "h-6 w-6" : "h-8 w-8"}`} />
-          <span className={scrolled ? "hidden text-lg sm:inline" : "text-2xl"}>Claqueta</span>
+          <span className={scrolled ? "hidden text-lg sm:inline" : "hidden text-2xl min-[380px]:inline"}>Claqueta</span>
         </Link>
 
         <SearchBox className="mx-auto hidden min-w-0 flex-1 sm:block sm:max-w-md" inputClassName={searchClass} />
 
         <nav className="ml-auto flex items-center gap-1 sm:ml-0" aria-label="Principal">
+          <Link
+            href="/buscar"
+            aria-label={t("nav.search")}
+            className={`${btn} grid h-9 w-9 place-items-center sm:hidden`}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </Link>
           {/* Pastilla de navegación: el resaltado teal se desliza hasta la sección activa */}
           <div className="mr-1 hidden items-center gap-0.5 rounded-full bg-neutral-200/70 p-1 lg:flex dark:bg-neutral-800/80">
             {links.map(({ href, label, Icon }) => {
@@ -293,7 +303,6 @@ export function NavbarClient({ account }: { account: Account | null }) {
 
       {open && (
         <div id="mobile-menu" className="mx-auto mt-2 max-w-6xl space-y-1 border-t border-neutral-200 px-4 pt-3 lg:hidden dark:border-neutral-800">
-          <SearchBox className="mb-2 sm:hidden" inputClassName={searchClass} />
           {links.map(({ href, label, Icon }) => {
             const active = pathname === href;
             return (
@@ -310,6 +319,14 @@ export function NavbarClient({ account }: { account: Account | null }) {
               </Link>
             );
           })}
+          <button
+            type="button"
+            onClick={toggleLang}
+            className={`${base} flex w-full items-center justify-between text-neutral-700 sm:hidden dark:text-neutral-200`}
+          >
+            {t("nav.lang")}
+            <span className="rounded-md bg-neutral-200 px-2 py-0.5 text-xs font-bold dark:bg-neutral-800">{lang.toUpperCase()}</span>
+          </button>
         </div>
       )}
     </header>

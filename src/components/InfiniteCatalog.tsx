@@ -4,12 +4,18 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { TitleCard } from "./TitleCard";
+import { FilterSelect } from "./FilterSelect";
 import { useI18n } from "./I18nProvider";
 import type { CatalogKind, SortKey, TmdbItem } from "@/lib/tmdb";
 import { genresForKind, type GenreKey } from "@/lib/genre-filter";
 import type { DictKey } from "@/lib/dict";
 
 const SORT_OPTIONS: SortKey[] = ["popularity", "rating", "rating_low", "recent", "oldest"];
+
+const SWITCH =
+  "relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand-fg peer-focus-visible:ring-offset-2 dark:bg-neutral-700 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5";
+const CHOOSE =
+  "shrink-0 rounded-full border border-dashed border-neutral-400 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:border-brand-fg hover:text-brand-fg dark:text-neutral-300";
 
 const PAGE = 20; // títulos que se muestran de golpe
 const keyOf = (i: TmdbItem) => `${i.media_type}-${i.id}`;
@@ -261,13 +267,14 @@ export function InfiniteCatalog({
 
   return (
     <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold">{t("home.all")}</h2>
-        <div className="flex flex-wrap items-center gap-3">
+      {/* Barra de filtros: en el móvil, título + interruptor arriba y los dos desplegables a la par debajo */}
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold">{t("home.all")}</h2>
           {myProviders !== null &&
             (hasProviders ? (
-              <label className="flex cursor-pointer select-none items-center gap-2.5 rounded-full border border-neutral-300 bg-white py-1 pl-3 pr-1.5 text-sm font-semibold dark:border-neutral-700 dark:bg-neutral-900">
-                {t("prov.onlyMine")}
+              <label className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-semibold md:hidden">
+                <span className="text-neutral-600 dark:text-neutral-300">{t("prov.onlyMine")}</span>
                 <input
                   type="checkbox"
                   role="switch"
@@ -275,48 +282,50 @@ export function InfiniteCatalog({
                   onChange={(e) => refetch(sort, genre, e.target.checked)}
                   className="peer sr-only"
                 />
-                <span
-                  aria-hidden="true"
-                  className="relative h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand-fg peer-focus-visible:ring-offset-2 dark:bg-neutral-700 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"
-                />
+                <span aria-hidden="true" className={SWITCH} />
               </label>
             ) : (
-              <Link
-                href="/ajustes#plataformas"
-                className="rounded-full border border-dashed border-neutral-400 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:border-brand-fg hover:text-brand-fg dark:text-neutral-300"
-              >
+              <Link href="/ajustes#plataformas" className={`${CHOOSE} md:hidden`}>
                 + {t("prov.choose")}
               </Link>
             ))}
-          <label className="flex items-center gap-2 text-sm text-neutral-500">
-            {t("sort.label")}
-            <select
-              value={sort}
-              onChange={(e) => refetch(e.target.value as SortKey, genre)}
-              className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm font-medium text-neutral-900 outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {t(`sort.${o}` as DictKey)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-neutral-500">
-            {t("list.genre")}
-            <select
-              value={genre}
-              onChange={(e) => refetch(sort, e.target.value as GenreKey | "")}
-              className="rounded-full border border-neutral-300 bg-white px-4 py-1.5 text-sm font-medium text-neutral-900 outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-            >
-              <option value="">{t("list.allGenres")}</option>
-              {genresForKind(kind).map((g) => (
-                <option key={g} value={g}>
-                  {t(`genre.${g}` as DictKey)}
-                </option>
-              ))}
-            </select>
-          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-2 md:flex md:items-center">
+          {myProviders !== null &&
+            (hasProviders ? (
+              <label className="mr-1 hidden cursor-pointer select-none items-center gap-2.5 text-sm font-semibold md:flex">
+                <span className="text-neutral-600 dark:text-neutral-300">{t("prov.onlyMine")}</span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={onlyMine}
+                  onChange={(e) => refetch(sort, genre, e.target.checked)}
+                  className="peer sr-only"
+                />
+                <span aria-hidden="true" className={SWITCH} />
+              </label>
+            ) : (
+              <Link href="/ajustes#plataformas" className={`${CHOOSE} mr-1 hidden md:inline-block`}>
+                + {t("prov.choose")}
+              </Link>
+            ))}
+          <FilterSelect label={t("sort.label")} icon="sort" value={sort} onChange={(v) => refetch(v as SortKey, genre)} className="md:w-48">
+            {SORT_OPTIONS.map((o) => (
+              <option key={o} value={o}>
+                {t(`sort.${o}` as DictKey)}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterSelect label={t("list.genre")} icon="genre" value={genre} onChange={(v) => refetch(sort, v as GenreKey | "")} className="md:w-48">
+            <option value="">
+              {t("list.genre")}: {t("list.allGenres")}
+            </option>
+            {genresForKind(kind).map((g) => (
+              <option key={g} value={g}>
+                {t(`genre.${g}` as DictKey)}
+              </option>
+            ))}
+          </FilterSelect>
         </div>
       </div>
 
