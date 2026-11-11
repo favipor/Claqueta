@@ -43,8 +43,8 @@ Con eso ya funciona el registro por **email y contraseña**. Para que el botón 
 ## 2. Ajustes de Supabase para el login
 
 En Supabase → **Authentication → URL Configuration**:
-- *Site URL*: `http://localhost:3000` (cuando publiques: `https://claqueta-iota.vercel.app`).
-- *Redirect URLs*: añade `http://localhost:3000/auth/callback` y `https://claqueta-iota.vercel.app/auth/callback`.
+- *Site URL*: `http://localhost:3000` (cuando publiques: `https://miclaqueta.com`).
+- *Redirect URLs*: añade `http://localhost:3000/auth/callback` y `https://miclaqueta.com/auth/callback`.
 
 Para pruebas rápidas puedes desactivar *Confirm email* en **Authentication → Providers → Email**; actívalo de nuevo antes de abrir la web al público.
 

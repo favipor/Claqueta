@@ -220,7 +220,7 @@ begin
   if not exists (select 1 from public.push_subscriptions where user_id = new.user_id) then return null; end if;
 
   perform net.http_post(
-    url := 'https://claqueta-iota.vercel.app/api/push',
+    url := 'https://miclaqueta.com/api/push',
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', secret),
     body := jsonb_build_object('notification_id', new.id)
   );

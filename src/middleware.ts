@@ -4,6 +4,12 @@ import { REMEMBER_COOKIE, sessionCookieOptions } from "@/lib/supabase/remember";
 
 // Mantiene la sesión de Supabase al día en cada petición.
 export async function middleware(request: NextRequest) {
+  // La dirección oficial es miclaqueta.com: quien entre por la antigua de Vercel se redirige
+  if (request.headers.get("host") === "claqueta-iota.vercel.app") {
+    const url = new URL(request.nextUrl.pathname + request.nextUrl.search, "https://miclaqueta.com");
+    return NextResponse.redirect(url, 308);
+  }
+
   // Si Supabase devuelve el inicio de sesión a otra página (p. ej. «/?code=...» porque esa dirección
   // no está en su lista permitida), se reenvía a /auth/callback para completar el login igualmente.
   const code = request.nextUrl.searchParams.get("code");
