@@ -154,7 +154,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
                   className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-fg ${
                     active
                       ? "text-white"
-                      : "text-neutral-700 hover:text-neutral-950 dark:text-neutral-200 dark:hover:text-white"
+                      : "text-neutral-700 hover:bg-white hover:text-brand-fg hover:shadow-sm hover:ring-1 hover:ring-black/5 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-white dark:hover:ring-white/10"
                   }`}
                 >
                   {active && (
