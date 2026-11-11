@@ -17,6 +17,7 @@ function urlBase64ToUint8Array(base64: string) {
 export function PushToggle() {
   const { t } = useI18n();
   const [state, setState] = useState<State>("loading");
+  const [detail, setDetail] = useState<string | null>(null);
   const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
   useEffect(() => {
@@ -64,9 +65,11 @@ export function PushToggle() {
         p256dh: json.keys.p256dh,
         auth: json.keys.auth,
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
+      setDetail(null);
       setState("on");
-    } catch {
+    } catch (e) {
+      setDetail(e instanceof Error ? e.message : String(e));
       setState("error");
     }
   }
@@ -122,6 +125,7 @@ export function PushToggle() {
       {state !== "on" && state !== "off" && state !== "busy" && state !== "loading" && (
         <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${state === "error" ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"}`}>
           {t(`push.${state}` as const)}
+          {state === "error" && detail && <span className="mt-1 block text-xs opacity-80">({detail})</span>}
         </p>
       )}
     </section>

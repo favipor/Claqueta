@@ -20,8 +20,8 @@ export default async function OgImage({ params }: { params: Promise<{ username: 
 
   const stat = (value: string, label: string) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 28px" }}>
-      <div style={{ fontSize: 76, fontWeight: 800 }}>{value}</div>
-      <div style={{ fontSize: 26, opacity: 0.8 }}>{label}</div>
+      <div style={{ display: "flex", fontSize: 76, fontWeight: 800 }}>{value}</div>
+      <div style={{ display: "flex", fontSize: 26, opacity: 0.8 }}>{label}</div>
     </div>
   );
 
@@ -40,8 +40,8 @@ export default async function OgImage({ params }: { params: Promise<{ username: 
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ fontSize: 34, opacity: 0.85 }}>{name}</div>
-        <div style={{ fontSize: 92, fontWeight: 800, letterSpacing: -2, marginTop: 6 }}>Mi {year} en Claqueta</div>
+        <div style={{ display: "flex", fontSize: 34, opacity: 0.85 }}>{name}</div>
+        <div style={{ display: "flex", fontSize: 92, fontWeight: 800, letterSpacing: -2, marginTop: 6 }}>{`Mi ${year} en Claqueta`}</div>
         {summary ? (
           <div style={{ display: "flex", marginTop: 40 }}>
             {stat(String(totalHours(summary)), "horas")}
@@ -51,8 +51,8 @@ export default async function OgImage({ params }: { params: Promise<{ username: 
           </div>
         ) : null}
         {summary && summary.genres[0] ? (
-          <div style={{ marginTop: 34, fontSize: 30, background: "rgba(255,255,255,0.15)", padding: "10px 28px", borderRadius: 999 }}>
-            Género favorito: {genreName(summary.genres[0].id, "es")}
+          <div style={{ display: "flex", marginTop: 34, fontSize: 30, background: "rgba(255,255,255,0.15)", padding: "10px 28px", borderRadius: 999 }}>
+            {`Género favorito: ${genreName(summary.genres[0].id, "es")}`}
           </div>
         ) : null}
       </div>

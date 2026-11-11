@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { img, type MediaType } from "@/lib/tmdb";
 import { useI18n } from "./I18nProvider";
+import { FilmIcon, TvIcon } from "./NavIcons";
 
 type Pending = {
   tmdb_id: number;
@@ -20,6 +21,7 @@ type Pending = {
 type Kind = "all" | MediaType;
 type Length = "any" | "short" | "medium";
 const MAX: Record<Length, number> = { any: Infinity, short: 95, medium: 125 };
+const LENGTHS: Length[] = ["any", "medium", "short"]; // de más largo a más corto en el deslizador
 
 // «¿Qué veo hoy?»: elige al azar algo de tus pendientes, con filtros de tipo y duración.
 export function RandomPick() {
@@ -85,10 +87,6 @@ export function RandomPick() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, all, kind, length]);
 
-  const chip = (active: boolean) =>
-    `rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
-      active ? "bg-brand text-white shadow" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-    }`;
 
   const poster = pick ? img(pick.poster_path, "w342") : null;
 
@@ -140,19 +138,62 @@ export function RandomPick() {
                     </button>
                   </div>
 
-                  <div className="mb-2 flex flex-wrap gap-1.5">
-                    {(["all", "movie", "tv"] as Kind[]).map((k) => (
-                      <button key={k} type="button" onClick={() => setKind(k)} className={chip(kind === k)} aria-pressed={kind === k}>
-                        {k === "all" ? t("list.all") : k === "movie" ? t("list.movies") : t("list.series")}
-                      </button>
-                    ))}
+                  {/* Tipo: selector segmentado con iconos */}
+                  <div role="radiogroup" aria-label={t("list.allTypes")} className="mb-4 grid grid-cols-3 rounded-xl bg-neutral-100 p-1 dark:bg-neutral-800">
+                    {(["all", "movie", "tv"] as Kind[]).map((k) => {
+                      const active = kind === k;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setKind(k)}
+                          className={`relative flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-semibold transition-colors ${
+                            active ? "text-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                          }`}
+                        >
+                          {active && (
+                            <motion.span
+                              layoutId="pick-kind"
+                              transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 450, damping: 34 }}
+                              className="absolute inset-0 rounded-lg bg-white shadow ring-1 ring-black/5 dark:bg-neutral-950 dark:ring-white/10"
+                            />
+                          )}
+                          <span className={`relative ${active ? "text-brand-fg" : ""}`}>
+                            {k === "all" ? <GridIcon className="h-4 w-4" /> : k === "movie" ? <FilmIcon className="h-4 w-4" /> : <TvIcon className="h-4 w-4" />}
+                          </span>
+                          <span className="relative">{k === "all" ? t("list.all") : k === "movie" ? t("list.movies") : t("list.series")}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="mb-4 flex flex-wrap gap-1.5">
-                    {(["any", "short", "medium"] as Length[]).map((l) => (
-                      <button key={l} type="button" onClick={() => setLength(l)} className={chip(length === l)} aria-pressed={length === l}>
-                        {t(`pick.len.${l}` as const)}
-                      </button>
-                    ))}
+
+                  {/* Duración: deslizador de 3 posiciones */}
+                  <div className="mb-4 rounded-xl border border-neutral-200 px-3 pb-2 pt-2.5 dark:border-neutral-800">
+                    <label htmlFor="pick-length" className="mb-1 flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1.5 font-semibold text-neutral-600 dark:text-neutral-300">
+                        <ClockIcon className="h-4 w-4 text-brand-fg" />
+                        {t("pick.length")}
+                      </span>
+                      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-bold text-brand-fg">{t(`pick.len.${length}` as const)}</span>
+                    </label>
+                    <input
+                      id="pick-length"
+                      type="range"
+                      min={0}
+                      max={2}
+                      step={1}
+                      value={LENGTHS.indexOf(length)}
+                      onChange={(e) => setLength(LENGTHS[Number(e.target.value)])}
+                      aria-valuetext={t(`pick.len.${length}` as const)}
+                      className="w-full cursor-pointer accent-teal-600"
+                    />
+                    <div className="flex justify-between text-[10px] font-medium uppercase tracking-wide text-neutral-400" aria-hidden="true">
+                      <span>{t("pick.tick.any")}</span>
+                      <span>2 h</span>
+                      <span>1 h 35</span>
+                    </div>
                   </div>
 
                   <div className="relative grid min-h-[22rem] place-items-center overflow-hidden rounded-2xl bg-neutral-100 dark:bg-neutral-800">
@@ -231,6 +272,26 @@ function DiceIcon({ className }: { className?: string }) {
       <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" />
       <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" />
       <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function GridIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+    </svg>
+  );
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }

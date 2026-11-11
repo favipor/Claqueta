@@ -553,6 +553,8 @@ const es = {
   "year.menu": "Mi resumen",
   "share.button": "Compartir",
   "share.copied": "¡Enlace copiado!",
+  "pick.length": "Duración",
+  "pick.tick.any": "Todas",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1108,6 +1110,8 @@ const en: Record<keyof typeof es, string> = {
   "year.menu": "My recap",
   "share.button": "Share",
   "share.copied": "Link copied!",
+  "pick.length": "Length",
+  "pick.tick.any": "Any",
 };
 
 export type DictKey = keyof typeof es;
