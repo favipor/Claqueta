@@ -286,6 +286,23 @@ export default async function ProfilePage({ params, searchParams }: Props) {
         </header>
       </Reveal>
 
+      {canView && (
+        <Reveal>
+          <Link
+            href={`${base}/resumen`}
+            className="group flex items-center justify-between gap-4 overflow-hidden rounded-2xl bg-gradient-to-r from-teal-900 via-teal-700 to-teal-500 px-5 py-4 text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-hover"
+          >
+            <span>
+              <span className="block text-xs font-bold uppercase tracking-widest text-teal-200">{t("year.menu")}</span>
+              <span className="block text-lg font-extrabold">
+                {isOwner ? t("year.titleMine") : t("year.titleOther")} {new Date().getFullYear()} en Claqueta
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-2xl transition-transform group-hover:translate-x-1">→</span>
+          </Link>
+        </Reveal>
+      )}
+
       {isOwner && requests.length > 0 && <RequestsPanel requests={requests} />}
 
       {!canView ? (

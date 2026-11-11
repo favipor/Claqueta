@@ -6,6 +6,7 @@ import { MyListGrid } from "@/components/MyListGrid";
 import { STATUSES, type Status } from "@/lib/dict";
 import { getTvSeasons, type TvSeason } from "@/lib/tmdb";
 import { ListControls } from "@/components/ListControls";
+import { RandomPick } from "@/components/RandomPick";
 import { SORTS, type Sort } from "@/lib/list-sort";
 import { genreName } from "@/lib/genres";
 import { readWatchedForTitles } from "@/lib/tv-state";
@@ -120,7 +121,8 @@ export default async function MyListPage({
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">{t("list.title")}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <RandomPick />
           <Link
             href="/importar"
             title={t("imp.link")}

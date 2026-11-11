@@ -10,6 +10,7 @@ import type { Status } from "@/lib/dict";
 export type MyTitle = { status: Status | null; rating: number | null };
 
 let map = new Map<string, MyTitle>();
+let loggedIn = false;
 const listeners = new Set<() => void>();
 const subscribe = (cb: () => void) => {
   listeners.add(cb);
@@ -48,6 +49,7 @@ async function load() {
       }
     }
     map = next;
+    loggedIn = !!session;
     lastLoad = Date.now();
     listeners.forEach((l) => l());
   } catch {
@@ -96,5 +98,14 @@ export function useMyTitle(type: string, id: number): MyTitle | undefined {
     subscribe,
     () => map.get(keyOf(type, id)),
     () => undefined
+  );
+}
+
+// ¿Hay sesión iniciada? (para enseñar o no los botones rápidos de las carátulas)
+export function useLoggedIn(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => loggedIn,
+    () => false
   );
 }

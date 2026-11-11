@@ -205,3 +205,17 @@ export async function removeFollower(followerId: string): Promise<{ ok: boolean 
     .eq("following_id", user.id);
   return { ok: !error };
 }
+
+// Guarda tus plataformas de streaming (ids de TMDB) para el filtro «Solo en mis plataformas»
+export async function saveProviders(ids: number[]): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  const clean = [...new Set(ids.filter((n) => Number.isInteger(n) && n > 0))].slice(0, 30);
+  const { error } = await supabase.from("profiles").update({ providers: clean }).eq("id", user.id);
+  if (error) return { ok: false };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

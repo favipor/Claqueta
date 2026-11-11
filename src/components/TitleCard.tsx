@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { img, type MediaType } from "@/lib/tmdb";
 import { useI18n } from "./I18nProvider";
 import { ProgressBar } from "./ProgressBar";
-import { useMyTitle } from "./MyTitles";
+import { useLoggedIn, useMyTitle } from "./MyTitles";
+import { QuickTrackSheet } from "./QuickTrack";
 import type { Status } from "@/lib/dict";
 
 const badgeColor: Record<Status, string> = {
@@ -49,6 +51,45 @@ export function TitleCard({
   const shownStatus = status === undefined ? mine?.status ?? null : status;
   const shownRating = rating === undefined ? mine?.rating ?? null : rating;
 
+  // Marcar y puntuar sin entrar en la ficha: botón en la carátula o dedo pulsado medio segundo (móvil)
+  const loggedIn = useLoggedIn();
+  const [quick, setQuick] = useState(false);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressed = useRef(false);
+  const cancelPress = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  };
+  const pressHandlers = loggedIn
+    ? {
+        onPointerDown: (e: React.PointerEvent) => {
+          longPressed.current = false;
+          if (e.pointerType !== "touch") return;
+          cancelPress();
+          pressTimer.current = setTimeout(() => {
+            longPressed.current = true;
+            navigator.vibrate?.(15);
+            setQuick(true);
+          }, 500);
+        },
+        onPointerUp: cancelPress,
+        onPointerLeave: cancelPress,
+        onPointerCancel: cancelPress,
+        onTouchMove: cancelPress,
+        onContextMenu: (e: React.MouseEvent) => {
+          if (longPressed.current || pressTimer.current) e.preventDefault();
+        },
+        onClickCapture: (e: React.MouseEvent) => {
+          // tras una pulsación larga no se abre la ficha
+          if (longPressed.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            longPressed.current = false;
+          }
+        },
+      }
+    : {};
+
   return (
     <motion.div
       initial={reduce || !reveal ? false : { opacity: 0, y: 20 }}
@@ -56,8 +97,11 @@ export function TitleCard({
       viewport={{ once: true, margin: "-30px" }}
       transition={{ duration: 0.35, delay: Math.min(index % 6, 5) * 0.05 }}
       whileHover={reduce ? undefined : { y: -6, scale: 1.03 }}
+      className="group/card relative"
     >
       <Link
+        {...pressHandlers}
+        draggable={false}
         href={`/titulo/${type}/${id}`}
         className="group block overflow-hidden rounded-xl bg-neutral-200 shadow-sm ring-1 ring-black/5 transition-shadow duration-300 hover:shadow-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-fg dark:bg-neutral-800"
       >
@@ -103,7 +147,7 @@ export function TitleCard({
             </div>
           )}
         </div>
-        <div className="p-2.5">
+        <div className={`p-2.5 ${loggedIn ? "pr-11" : ""}`}>
           <p className="line-clamp-1 text-sm font-semibold">{title}</p>
           <p className="text-xs text-neutral-500">
             {t(`kind.${type}` as const)}
@@ -121,6 +165,36 @@ export function TitleCard({
           )}
         </div>
       </Link>
+      {loggedIn && (
+        <>
+          <button
+            type="button"
+            onClick={() => setQuick(true)}
+            aria-label={`${t("quick.open")}: ${title}`}
+            title={t("quick.open")}
+            className="absolute bottom-2.5 right-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-brand text-white shadow-md transition hover:scale-110 hover:bg-brand-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 [@media(hover:hover)]:focus-visible:opacity-100"
+          >
+            {shownStatus || shownRating !== null ? (
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            )}
+          </button>
+          <QuickTrackSheet
+            open={quick}
+            onClose={() => setQuick(false)}
+            id={id}
+            type={type}
+            title={title}
+            posterPath={posterPath}
+            current={mine /* siempre lo tuyo, aunque la carátula muestre lo de otra persona */}
+          />
+        </>
+      )}
     </motion.div>
   );
 }

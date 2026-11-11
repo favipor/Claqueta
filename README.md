@@ -21,6 +21,16 @@ Web para llevar el seguimiento de películas y series (datos de TMDB), con login
    y por último con `supabase/phase5b.sql` (mensajes privados y recomendaciones).
    y `supabase/phase7.sql` (descubrir gente afín y panel de administración de usuarios).
    y `supabase/phase8.sql` (aviso al admin cuando alguien se registra y capacidad de la base de datos en Admin).
+   y `supabase/phase9.sql` (barra más rápida, plataformas, resumen del año, avisos de capítulos y notificaciones push).
+
+## Notificaciones push y avisos de capítulos (fase 9)
+
+1. Variables de entorno (en `.env.local` y en Vercel → Settings → Environment Variables):
+   `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `PUSH_WEBHOOK_SECRET`, `CRON_SECRET` y `SUPABASE_SERVICE_ROLE_KEY`
+   (esta última en Supabase → Project Settings → API Keys → service_role). Las claves VAPID se generan con `npx web-push generate-vapid-keys`.
+2. En Supabase → SQL Editor guarda la clave del webhook en Vault (el mismo valor que `PUSH_WEBHOOK_SECRET`):
+   `select vault.create_secret('VALOR_DE_PUSH_WEBHOOK_SECRET', 'push_webhook_secret');`
+3. La tarea diaria de capítulos está en `vercel.json` (todos los días a las 8:00 UTC).
    Opcional para probar: `supabase/demo_bot.sql` crea dos personas falsas (se borran con `select demo_cleanup();`).
 5. Arranca la web:
    ```

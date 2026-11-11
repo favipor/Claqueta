@@ -67,6 +67,10 @@ export default async function NotificationsPage() {
           ? a?.username
             ? `/mensajes/${a.username}`
             : null
+          : n.type === "new_episode"
+            ? n.tmdb_id
+              ? `/titulo/tv/${n.tmdb_id}`
+              : null
           : n.type === "reply" || n.type === "mention"
             ? n.tmdb_id && n.media_type
               ? `/titulo/${n.media_type}/${n.tmdb_id}#conversacion`

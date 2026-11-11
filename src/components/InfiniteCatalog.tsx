@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { TitleCard } from "./TitleCard";
 import { useI18n } from "./I18nProvider";
 import type { CatalogKind, SortKey, TmdbItem } from "@/lib/tmdb";
@@ -24,6 +25,7 @@ type Snapshot = {
   started: boolean;
   sort: SortKey;
   genre: GenreKey | "";
+  onlyMine?: boolean;
   scrollY: number;
   at: number;
 };
@@ -77,10 +79,13 @@ export function InfiniteCatalog({
   kind,
   initialItems,
   initialTotalPages,
+  myProviders = null,
 }: {
   kind: CatalogKind;
   initialItems: TmdbItem[];
   initialTotalPages: number;
+  // Tus plataformas (null = sin sesión: no se enseña el interruptor)
+  myProviders?: number[] | null;
 }) {
   const { t } = useI18n();
   const [genre, setGenre] = useState<GenreKey | "">("");
@@ -100,6 +105,11 @@ export function InfiniteCatalog({
   // pintado pisaría lo guardado antes de poder leerlo)
   const [ready, setReady] = useState(false);
 
+  // «Solo en mis plataformas»
+  const [onlyMine, setOnlyMine] = useState(false);
+  const onlyMineRef = useRef(false);
+  const hasProviders = !!myProviders && myProviders.length > 0;
+
   const loadingRef = useRef(false);
   const reqId = useRef(0);
 
@@ -110,7 +120,8 @@ export function InfiniteCatalog({
       setLoading(true);
       setError(false);
       try {
-        const res = await fetch(`/api/discover?kind=${kind}&sort=${nextSort}&page=${nextPage}${nextGenre ? `&genre=${nextGenre}` : ""}`);
+        const prov = onlyMineRef.current && myProviders?.length ? `&providers=${myProviders.join(",")}` : "";
+        const res = await fetch(`/api/discover?kind=${kind}&sort=${nextSort}&page=${nextPage}${nextGenre ? `&genre=${nextGenre}` : ""}${prov}`);
         if (!res.ok) throw new Error("fetch");
         const data = (await res.json()) as { items: TmdbItem[]; totalPages: number };
         if (id !== reqId.current) return; // llegó una respuesta antigua: se ignora
@@ -130,10 +141,12 @@ export function InfiniteCatalog({
         }
       }
     },
-    [kind, genre]
+    [kind, genre, myProviders]
   );
 
-  function refetch(nextSort: SortKey, nextGenre: GenreKey | "") {
+  function refetch(nextSort: SortKey, nextGenre: GenreKey | "", nextOnlyMine: boolean = onlyMineRef.current) {
+    onlyMineRef.current = nextOnlyMine;
+    setOnlyMine(nextOnlyMine);
     setSort(nextSort);
     setGenre(nextGenre);
     setItems([]);
@@ -180,6 +193,8 @@ export function InfiniteCatalog({
       setStarted(snap.started);
       setSort(snap.sort);
       setGenre(snap.genre);
+      onlyMineRef.current = !!snap.onlyMine && hasProviders;
+      setOnlyMine(onlyMineRef.current);
       setRestoreY(snap.scrollY);
     }
     setReady(true);
@@ -219,13 +234,14 @@ export function InfiniteCatalog({
           started,
           sort,
           genre,
+          onlyMine,
           scrollY: scrollY ?? prev?.scrollY ?? 0,
           at: Date.now(),
         };
         sessionStorage.setItem(snapKey, JSON.stringify(snap));
       } catch {}
     },
-    [ready, snapKey, items, page, totalPages, shown, started, sort, genre]
+    [ready, snapKey, items, page, totalPages, shown, started, sort, genre, onlyMine]
   );
 
   useEffect(() => {
@@ -248,6 +264,30 @@ export function InfiniteCatalog({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold">{t("home.all")}</h2>
         <div className="flex flex-wrap items-center gap-3">
+          {myProviders !== null &&
+            (hasProviders ? (
+              <label className="flex cursor-pointer select-none items-center gap-2.5 rounded-full border border-neutral-300 bg-white py-1 pl-3 pr-1.5 text-sm font-semibold dark:border-neutral-700 dark:bg-neutral-900">
+                {t("prov.onlyMine")}
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={onlyMine}
+                  onChange={(e) => refetch(sort, genre, e.target.checked)}
+                  className="peer sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className="relative h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand-fg peer-focus-visible:ring-offset-2 dark:bg-neutral-700 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5"
+                />
+              </label>
+            ) : (
+              <Link
+                href="/ajustes#plataformas"
+                className="rounded-full border border-dashed border-neutral-400 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:border-brand-fg hover:text-brand-fg dark:text-neutral-300"
+              >
+                + {t("prov.choose")}
+              </Link>
+            ))}
           <label className="flex items-center gap-2 text-sm text-neutral-500">
             {t("sort.label")}
             <select

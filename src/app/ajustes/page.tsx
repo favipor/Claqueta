@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { privacyCooldownUntil } from "@/lib/profile";
 import { BlockedList } from "@/components/BlockedList";
 import { SettingsForm } from "@/components/SettingsForm";
+import { ProvidersPicker } from "@/components/ProvidersPicker";
+import { PushToggle } from "@/components/PushToggle";
+import { getProviders } from "@/lib/tmdb";
+import { getT } from "@/lib/i18n-server";
 
 export const metadata = { title: "Ajustes" };
 
@@ -29,6 +33,13 @@ export default async function SettingsPage() {
     ? await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", ids)
     : { data: [] };
 
+  // Plataformas: lista de TMDB + las que ya tienes guardadas (si falta phase9.sql no se muestra)
+  const { lang } = await getT();
+  const [allProviders, { data: provRow, error: provErr }] = await Promise.all([
+    getProviders(lang).catch(() => []),
+    supabase.from("profiles").select("providers").eq("id", user.id).maybeSingle(),
+  ]);
+
   return (
     <>
     <SettingsForm
@@ -42,6 +53,10 @@ export default async function SettingsPage() {
       }}
       cooldownUntil={until ? until.toISOString() : null}
     />
+    <PushToggle />
+    {!provErr && allProviders.length > 0 && (
+      <ProvidersPicker providers={allProviders} initial={((provRow?.providers as number[] | null) ?? [])} />
+    )}
     <BlockedList people={(blockedPeople ?? []) as any} />
     </>
   );

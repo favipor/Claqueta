@@ -18,6 +18,12 @@ export async function GET(request: Request) {
   const page = Number(sp.get("page") ?? "1");
   const g = sp.get("genre");
   const genre = isGenreKey(g) ? g : undefined;
+  // Plataformas: lista de números separados por comas (como mucho 30)
+  const providers = (sp.get("providers") ?? "")
+    .split(",")
+    .map((x) => Number(x))
+    .filter((n) => Number.isInteger(n) && n > 0)
+    .slice(0, 30);
 
   if (!KINDS.includes(kind) || !SORTS.includes(sort) || !Number.isFinite(page)) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
@@ -25,7 +31,7 @@ export async function GET(request: Request) {
 
   try {
     const lang = await getLang();
-    const data = await getDiscover(kind, sort, page, lang, genre);
+    const data = await getDiscover(kind, sort, page, lang, genre, providers);
     return NextResponse.json(data);
   } catch {
     return NextResponse.json({ error: "upstream" }, { status: 502 });

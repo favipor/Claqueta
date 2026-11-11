@@ -75,10 +75,19 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
   } = await supabase.auth.getUser();
   const loggedIn = !!user;
 
-  const [week, day, first] = await Promise.all([
+  const [week, day, first, myProviders] = await Promise.all([
     getTrending(lang, "week", kind).catch(() => noItems),
     getTrending(lang, "day", kind).catch(() => noItems),
     getDiscover(kind, "popularity", 1, lang).catch(() => ({ items: noItems, totalPages: 1 })),
+    // Tus plataformas para el interruptor «Solo en mis plataformas» (phase9.sql)
+    user
+      ? supabase
+          .from("profiles")
+          .select("providers")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data, error }) => (error ? null : ((data?.providers as number[] | null) ?? [])))
+      : Promise.resolve(null),
   ]);
 
   // Carátulas del fondo del banner: se mezclan varias listas para tener variedad
@@ -130,6 +139,7 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
         kind={kind}
         initialItems={first.items}
         initialTotalPages={first.totalPages}
+        myProviders={myProviders}
       />
     </div>
   );

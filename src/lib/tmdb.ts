@@ -213,7 +213,28 @@ const SORT_PARAM: Record<MediaType, Record<SortKey, string>> = {
   },
 };
 
-async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: string, genre?: GenreKey) {
+// Plataformas de streaming disponibles en España (Netflix, Prime Video, Disney+...), ordenadas por relevancia
+export type Provider = { id: number; name: string; logo_path: string | null };
+export const PROVIDER_REGION = "ES";
+
+export async function getProviders(lang: string): Promise<Provider[]> {
+  const [m, t] = await Promise.all([
+    tmdb("/watch/providers/movie", lang, { watch_region: PROVIDER_REGION }).catch(() => ({ results: [] })),
+    tmdb("/watch/providers/tv", lang, { watch_region: PROVIDER_REGION }).catch(() => ({ results: [] })),
+  ]);
+  const byId = new Map<number, Provider & { prio: number }>();
+  for (const r of [...(m.results ?? []), ...(t.results ?? [])] as any[]) {
+    const prio = r.display_priorities?.[PROVIDER_REGION] ?? r.display_priority ?? 999;
+    const cur = byId.get(r.provider_id);
+    if (!cur || prio < cur.prio) byId.set(r.provider_id, { id: r.provider_id, name: r.provider_name, logo_path: r.logo_path ?? null, prio });
+  }
+  return [...byId.values()]
+    .sort((a, b) => a.prio - b.prio)
+    .slice(0, 30)
+    .map(({ id, name, logo_path }) => ({ id, name, logo_path }));
+}
+
+async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: string, genre?: GenreKey, providers?: number[]) {
   const today = new Date().toISOString().slice(0, 10);
   const params: Record<string, string> = {
     sort_by: SORT_PARAM[type][sort],
@@ -237,6 +258,13 @@ async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: s
     params["vote_count.gte"] = "5";
   }
 
+  // Solo lo que se puede ver con tus plataformas (incluido en la suscripción)
+  if (providers && providers.length) {
+    params.with_watch_providers = providers.join("|");
+    params.watch_region = PROVIDER_REGION;
+    params.with_watch_monetization_types = "flatrate|free|ads";
+  }
+
   const data = await tmdb(`/discover/${type}`, lang, params);
   const items = (data.results as any[])
     .filter((r) => r.poster_path)
@@ -252,14 +280,15 @@ export async function getDiscover(
   sort: SortKey,
   page: number,
   lang: string,
-  genre?: GenreKey
+  genre?: GenreKey,
+  providers?: number[]
 ): Promise<{ items: TmdbItem[]; totalPages: number }> {
   const p = Math.min(Math.max(1, Math.floor(page) || 1), 500);
 
   if (kind === "all") {
     const [m, t] = await Promise.all([
-      discoverOne("movie", sort, p, lang, genre),
-      discoverOne("tv", sort, p, lang, genre),
+      discoverOne("movie", sort, p, lang, genre, providers),
+      discoverOne("tv", sort, p, lang, genre, providers),
     ]);
     const items: TmdbItem[] = [];
     const n = Math.max(m.items.length, t.items.length);
@@ -271,7 +300,7 @@ export async function getDiscover(
     const pages = m.items.length === 0 ? t.totalPages : t.items.length === 0 ? m.totalPages : Math.min(m.totalPages, t.totalPages);
     return { items, totalPages: pages };
   }
-  return discoverOne(kind, sort, p, lang, genre);
+  return discoverOne(kind, sort, p, lang, genre, providers);
 }
 
 export async function searchTitles(q: string, lang: string): Promise<TmdbItem[]> {

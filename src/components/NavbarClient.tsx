@@ -224,6 +224,12 @@ export function NavbarClient({ account }: { account: Account | null }) {
                         {hasNew && <span aria-label={t("notif.aria")} className="h-2.5 w-2.5 rounded-full bg-red-500" />}
                       </Link>
                       {account.username && (
+                        <Link role="menuitem" href={`/u/${account.username}/resumen`} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
+                          <SparkIcon className="h-4 w-4" />
+                          {t("year.menu")} {new Date().getFullYear()}
+                        </Link>
+                      )}
+                      {account.username && (
                         <Link role="menuitem" href="/ajustes" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
                           <GearIcon className="h-4 w-4" />
                           {t("nav.settings")}
@@ -340,6 +346,15 @@ function ShieldIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function SparkIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" />
+      <path d="M19 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
     </svg>
   );
 }
