@@ -555,6 +555,7 @@ const es = {
   "share.copied": "¡Enlace copiado!",
   "pick.length": "Duración",
   "pick.tick.any": "Todas",
+  "push.not-configured": "Los avisos aún no están configurados en el servidor. Vuelve a intentarlo en un rato.",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1112,6 +1113,7 @@ const en: Record<keyof typeof es, string> = {
   "share.copied": "Link copied!",
   "pick.length": "Length",
   "pick.tick.any": "Any",
+  "push.not-configured": "Notifications aren't set up on the server yet. Please try again later.",
 };
 
 export type DictKey = keyof typeof es;

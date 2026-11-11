@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useI18n } from "./I18nProvider";
 
-type State = "loading" | "unsupported" | "ios-install" | "denied" | "off" | "on" | "busy" | "error";
+type State = "loading" | "unsupported" | "not-configured" | "ios-install" | "denied" | "off" | "on" | "busy" | "error";
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -22,7 +22,12 @@ export function PushToggle() {
 
   useEffect(() => {
     (async () => {
-      if (!vapid || !("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      // Falta la clave pública en el servidor: no es culpa del navegador
+      if (!vapid) {
+        setState("not-configured");
+        return;
+      }
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
         // En iPhone solo funciona con la web instalada en la pantalla de inicio
         const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
         const standalone = (navigator as Navigator & { standalone?: boolean }).standalone;
