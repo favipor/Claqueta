@@ -2,7 +2,7 @@
 // Son plantillas razonables para una web personal sin analítica ni publicidad; si el proyecto
 // crece (anuncios, pagos, empresa), conviene que los revise un profesional.
 export const LEGAL = {
-  email: "claqueta.contacto@gmail.com",
+  email: "contacto@miclaqueta.com",
   site: "Claqueta",
   updated: "11/11/2026",
 };

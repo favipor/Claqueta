@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 name: "Claqueta",
                 url: `${SITE_URL}/`,
                 logo: `${SITE_URL}/icons/icon-512.png`,
-                email: "claqueta.contacto@gmail.com",
+                email: "contacto@miclaqueta.com",
               },
             ]),
           }}
