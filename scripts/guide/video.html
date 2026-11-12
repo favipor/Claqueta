@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&display=block" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: #061a1a; }
+  body { font-family: Lexend, system-ui, sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden;
+    background: radial-gradient(120% 90% at 20% 10%, #0f766e 0%, #08343a 45%, #050b10 100%); }
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .55; }
+  .scene { position: absolute; inset: 0; opacity: 0; will-change: transform, opacity; }
+  .abs { position: absolute; }
+  .poster { position: absolute; border-radius: 14px; background-size: cover; background-position: center;
+    box-shadow: 0 18px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12); }
+  .card { position: absolute; background: #fff; color: #171717; border-radius: 26px;
+    box-shadow: 0 30px 70px rgba(0,0,0,.45); }
+  .glass { position: absolute; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
+    border-radius: 24px; backdrop-filter: blur(14px); }
+  .h1 { font-weight: 900; letter-spacing: -.035em; line-height: 1; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-weight: 700; }
+  .word { display: inline-block; opacity: 0; margin: 0 .12em; }
+  .accent { color: #5eead4; }
+  .amber { color: #fbbf24; }
+  .chip { position: absolute; width: 74px; height: 74px; border-radius: 18px; display: grid; place-items: center;
+    font-weight: 800; font-size: 22px; background: #f1f5f9; color: #64748b; }
+  .avatar { border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #fff; }
+  .conf { position: absolute; width: 12px; height: 18px; border-radius: 3px; opacity: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="blob" id="b1" style="width:520px;height:520px;background:#14b8a6;left:-120px;top:-160px"></div>
+  <div class="blob" id="b2" style="width:460px;height:460px;background:#f59e0b;right:-160px;bottom:-200px;opacity:.25"></div>
+  <div id="scenes"></div>
+  <div id="flash" class="abs" style="inset:0;background:#fff;opacity:0;pointer-events:none"></div>
+  <div id="confetti" class="abs" style="inset:0;pointer-events:none"></div>
+</div>
+<script>
+// =====================================================================
+// Motor: render(t) coloca cada elemento según el tiempo (determinista).
+// window.TL (tiempos de la voz) y window.P (carteles) los inyecta render.mjs
+// =====================================================================
+const TL = window.TL, P = window.P;
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const pr = (t, a, d) => clamp((t - a) / d);
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c1 = 2.2, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const S = (e, o) => { for (const k in o) e.style[k] = o[k]; };
+const img = (k) => `url('${P[k]}')`;
+const CUES = []; // [segundo absoluto, tipo] → efectos de sonido
+const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+const SC = Object.fromEntries(TL.scenes.map((s) => [s.id, s]));
+// Segundo (local a la escena) en que se dice una palabra
+function wt(id, prefix, nth = 0) {
+  const ws = SC[id].words.filter((w) => norm(w.w).startsWith(norm(prefix)));
+  const w = ws[nth] ?? ws[0];
+  if (!w) throw new Error(`palabra «${prefix}» no está en ${id}`);
+  return TL.lead + w.t;
+}
+const cue = (id, local, kind) => CUES.push([+(SC[id].start + local).toFixed(3), kind]);
+
+// Aparece con rebote: opacidad + subida + escala
+function popIn(e, t, at, { dur = 0.45, y = 30, s = 0.85, extra = "" } = {}) {
+  const x = pr(t, at, dur);
+  const b = back(x);
+  S(e, { opacity: clamp(x * 2.2), transform: `translateY(${(1 - b) * y}px) scale(${lerp(s, 1, b)}) ${extra}` });
+}
+// Confeti determinista
+let seed = 1;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const bursts = []; // {at (abs), x, y, n}
+function makeBurst(id, local, x, y, n = 36) {
+  const parts = [];
+  const colors = ["#5eead4", "#fbbf24", "#f472b6", "#a78bfa", "#ffffff", "#34d399"];
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("div");
+    d.className = "conf";
+    d.style.background = colors[i % colors.length];
+    $("confetti").appendChild(d);
+    const a = rnd() * Math.PI * 2, v = 260 + rnd() * 420;
+    parts.push({ d, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 300, r: rnd() * 720 - 360 });
+  }
+  bursts.push({ at: SC[id].start + local, x, y, parts });
+}
+function renderBursts(T) {
+  for (const b of bursts) {
+    const k = T - b.at;
+    for (const p of b.parts) {
+      if (k < 0 || k > 1.6) { p.d.style.opacity = 0; continue; }
+      const x = b.x + p.vx * k, y = b.y + p.vy * k + 700 * k * k;
+      S(p.d, { opacity: clamp(1.6 - k) , transform: `translate(${x}px,${y}px) rotate(${p.r * k}deg)` });
+    }
+  }
+}
+
+// ---------- Escenas ----------
+const scenes = []; // {id, el, update(lt)}
+function scene(id, html, update) {
+  const el = document.createElement("div");
+  el.className = "scene";
+  el.innerHTML = html;
+  $("scenes").appendChild(el);
+  scenes.push({ id, el, update, s: SC[id] });
+}
+const CLAP = (size, stick = "") => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 11h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>
+  <g id="${stick}" style="transform-origin:4px 11px;transform-box:view-box"><path d="m4 11-1.2-3.9a1 1 0 0 1 .7-1.2l14.6-3.9a1 1 0 0 1 1.2.7L20 6.5"/><path d="m7.6 9.9 3.4-5.6M13 8.6l3.4-5.6"/></g></svg>`;
+const STAR = (id) => `<svg viewBox="0 0 24 24" width="40" height="40" style="position:relative"><path d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z" fill="#e5e7eb"/><defs><clipPath id="c${id}"><rect id="${id}" x="0" y="0" width="0" height="24"/></clipPath></defs><path clip-path="url(#c${id})" d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96L12 2.5z" fill="#f59e0b"/></svg>`;
+
+// Pared de carteles (gancho, fondo de la marca y del cierre)
+function wallHTML(prefix, cols = 8, rows = 5) {
+  let h = `<div id="${prefix}" class="abs" style="left:-160px;top:-260px;width:1600px;height:1300px;transform:rotate(-12deg)">`;
+  for (let c = 0; c < cols; c++) {
+    h += `<div id="${prefix}c${c}" class="abs" style="left:${c * 200}px;top:0;width:180px">`;
+    for (let r = 0; r < rows * 2; r++) {
+      const k = P.wall[(c * 7 + r * 3) % P.wall.length];
+      h += `<div class="poster" style="position:relative;width:180px;height:270px;margin-bottom:20px;background-image:url('${k}')"></div>`;
+    }
+    h += `</div>`;
+  }
+  return h + `</div>`;
+}
+function wallMove(prefix, t, speed) {
+  for (let c = 0; c < 8; c++) {
+    const e = $(prefix + "c" + c);
+    if (!e) continue;
+    const dir = c % 2 ? 1 : -1;
+    e.style.transform = `translateY(${(dir * t * speed - 290 * (c % 2)) % 580}px)`;
+  }
+}
+
+// 1 · GANCHO
+{
+  const words = SC.hook.es.replace(/[¿?]/g, (m) => m).split(" ");
+  scene("hook", `
+    ${wallHTML("hw")}
+    <div class="abs" style="inset:0;background:linear-gradient(180deg,rgba(5,11,16,.55),rgba(5,11,16,.85))"></div>
+    <div id="hclock" class="abs pill" style="right:60px;top:52px;height:58px;padding:0 26px;font-size:30px;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.25);font-variant-numeric:tabular-nums">⏳ 00:00</div>
+    <div class="abs h1" style="left:0;right:0;top:230px;text-align:center;font-size:92px;padding:0 70px">
+      ${words.map((w, i) => `<span class="word" id="hw${i}">${w.replace("ver?", '<span class="amber">ver?</span>')}</span>`).join(" ")}
+    </div>
+    <div id="hemoji" class="abs" style="left:0;right:0;top:470px;text-align:center;font-size:90px;opacity:0">😩</div>`,
+    (t) => {
+      wallMove("hw", t, 140);
+      const sec = Math.floor(lerp(0, 1799, eio(pr(t, 0, 2.9))));
+      $("hclock").textContent = `⏳ ${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+      popIn($("hclock"), t, 0, { y: -20 });
+      const ws = SC.hook.words;
+      words.forEach((w, i) => popIn($("hw" + i), t, TL.lead + (ws[i]?.t ?? i * 0.3) - 0.05, { y: 40, s: 0.6 }));
+      popIn($("hemoji"), t, wt("hook", "ver") + 0.25, { s: 0.3, extra: `rotate(${Math.sin(t * 9) * 6}deg)` });
+    });
+  cue("hook", wt("hook", "ver") + 0.25, "pop");
+}
+
+// 2 · MARCA
+{
+  const fan = ["dune", "stranger", "oppen", "wednesday", "spider", "bear", "barbie"];
+  scene("brand", `
+    ${fan.map((k, i) => `<div id="bf${i}" class="poster" style="width:170px;height:255px;left:555px;top:200px;background-image:${img(k)}"></div>`).join("")}
+    <div id="bglow" class="abs" style="left:440px;top:110px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(94,234,212,.55),transparent 65%)"></div>
+    <div id="blogo" class="abs" style="left:540px;top:150px;width:200px;height:200px;border-radius:48px;background:linear-gradient(135deg,#14b8a6,#0f766e);display:grid;place-items:center;color:#fff;box-shadow:0 30px 80px rgba(20,184,166,.5)">${CLAP(120, "bstick")}</div>
+    <div id="bname" class="abs h1" style="left:0;right:0;top:380px;text-align:center;font-size:110px">${"Claqueta".split("").map((c, i) => `<span class="word" style="margin:0" id="bl${i}">${c}</span>`).join("")}</div>
+    <div id="btag" class="abs" style="left:0;right:0;top:520px;text-align:center;font-size:38px;font-weight:600;color:#ccfbf1;opacity:0">Tus pelis y series. <span class="accent">En un solo sitio.</span></div>`,
+    (t) => {
+      const drop = pr(t, 0, 0.45);
+      S($("blogo"), { opacity: clamp(drop * 3), transform: `translateY(${(1 - back(drop)) * -260}px) scale(${lerp(0.6, 1, back(drop))}) rotate(${(1 - eo(drop)) * -14}deg)` });
+      // la tapa de la claqueta: abierta → «clac» al aterrizar → se vuelve a abrir un poco
+      const clac = pr(t, 0.3, 0.12);
+      $("bstick").style.transform = `rotate(${lerp(-28, 0, clac) + Math.max(0, Math.sin((t - 0.42) * 9) * 4 * Math.exp(-(t - 0.42) * 4)) * (t > 0.42)}deg)`;
+      S($("bglow"), { opacity: pr(t, 0.4, 0.4) * (0.75 + 0.25 * Math.sin(t * 4)), transform: `scale(${1 + 0.05 * Math.sin(t * 3)})` });
+      "Claqueta".split("").forEach((_, i) => popIn($("bl" + i), t, 0.55 + i * 0.045, { y: 60, s: 0.4 }));
+      popIn($("btag"), t, wt("brand", "series") - 0.2, { y: 20 });
+      fan.forEach((_, i) => {
+        const x = pr(t, 0.5 + i * 0.05, 0.7), b = back(x);
+        const ang = (i - 3) * 17, rx = (i - 3) * 175, ry = Math.abs(i - 3) * 30;
+        S($("bf" + i), { opacity: clamp(x * 3) * 0.55, transform: `translate(${rx * b}px,${ry * b - 30}px) rotate(${ang * b}deg) scale(${lerp(0.5, 0.9, b)})` });
+      });
+    });
+  cue("brand", 0.42, "boom");
+  cue("brand", wt("brand", "series") - 0.2, "pop2");
+}
+
+// 3 · BUSCA · MARCA · PUNTÚA
+{
+  const states = ["Pendiente", "Viendo", "Visto", "Volver a ver"];
+  scene("track", `
+    <div id="tpost" class="poster" style="left:110px;top:120px;width:320px;height:480px;border-radius:24px;background-image:${img("dune")}"></div>
+    <div id="tcard" class="card" style="left:490px;top:150px;width:690px;height:420px;padding:36px 40px">
+      <div id="tsearch" style="height:62px;border-radius:999px;background:#f1f5f9;display:flex;align-items:center;padding:0 26px;font-size:26px;color:#0f172a;gap:14px"><span style="opacity:.6">🔎</span><span id="ttype"></span><span id="tcaret" style="width:3px;height:30px;background:#0f766e"></span></div>
+      <div style="margin-top:34px;font-size:44px;font-weight:800;letter-spacing:-.02em">Dune: Parte dos</div>
+      <div style="margin-top:6px;font-size:22px;color:#64748b">2024 · Película · 2 h 46 min</div>
+      <div style="margin-top:30px;display:flex;gap:12px">${states.map((s, i) => `<span id="ts${i}" class="pill" style="height:52px;padding:0 22px;font-size:21px;background:#f1f5f9;color:#334155">${s}</span>`).join("")}</div>
+      <div style="margin-top:34px;display:flex;align-items:center;gap:4px">${Array.from({ length: 10 }, (_, i) => STAR("tst" + i)).join("")}
+        <span id="tnum" style="margin-left:18px;font-size:46px;font-weight:900;color:#0f172a;opacity:0">9<span style="font-size:22px;color:#94a3b8">/10</span></span></div>
+    </div>
+    <div id="tcursor" class="abs" style="font-size:44px;opacity:0;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))">👆</div>
+    <div class="abs h1" style="left:0;right:0;top:36px;text-align:center;font-size:52px">
+      <span class="word" id="tk0">Busca</span><span class="word" style="opacity:.5" id="tk1">·</span><span class="word" id="tk2">Marca</span><span class="word" style="opacity:.5" id="tk3">·</span><span class="word accent" id="tk4">Puntúa</span></div>`,
+    (t) => {
+      popIn($("tpost"), t, 0, { y: 60, s: 0.8, extra: `perspective(900px) rotateY(${(1 - eo(pr(t, 0, 0.8))) * 25 + Math.sin(t * 1.4) * 3}deg)` });
+      popIn($("tcard"), t, 0.08, { y: 60, s: 0.92 });
+      const q = "Dune: Parte dos";
+      $("ttype").textContent = q.slice(0, Math.floor(q.length * pr(t, 0.3, 0.9)));
+      $("tcaret").style.opacity = Math.floor(t * 3) % 2 ? 0.2 : 1;
+      const kVisto = wt("track", "visto"), kNota = wt("track", "nota");
+      popIn($("tk0"), t, wt("track", "busca") - 0.05);
+      popIn($("tk1"), t, wt("track", "marcalo") - 0.1);
+      popIn($("tk2"), t, wt("track", "marcalo") - 0.05);
+      popIn($("tk3"), t, kNota - 0.3);
+      popIn($("tk4"), t, kNota - 0.2);
+      // cursor: viaja a «Visto» y pulsa
+      const pv = $("ts2").getBoundingClientRect();
+      const cx = lerp(1000, pv.left + pv.width / 2 - 12, eio(pr(t, kVisto - 0.6, 0.55)));
+      const cy = lerp(650, pv.top + 18, eio(pr(t, kVisto - 0.6, 0.55)));
+      const press = pr(t, kVisto - 0.05, 0.08) * (1 - pr(t, kVisto + 0.08, 0.1));
+      S($("tcursor"), { opacity: pr(t, kVisto - 0.7, 0.2) * (1 - pr(t, kNota + 0.6, 0.3)), left: cx + "px", top: cy + "px", transform: `scale(${1 - press * 0.2})` });
+      const on = pr(t, kVisto, 0.25);
+      S($("ts2"), { background: on ? `rgb(${lerp(241, 5, on)},${lerp(245, 150, on)},${lerp(249, 105, on)})` : "#f1f5f9", color: on > 0.5 ? "#fff" : "#334155", transform: `scale(${1 + Math.sin(on * Math.PI) * 0.18})` });
+      // estrellas que se llenan hasta el 9
+      for (let i = 0; i < 10; i++) {
+        const f = pr(t, kNota - 0.15 + i * 0.07, 0.09) * (i < 9 ? 1 : 0);
+        $("tst" + i).setAttribute("width", 24 * f);
+        $("tst" + i).parentNode.parentNode.parentNode.style.transform = `scale(${1 + Math.sin(f * Math.PI) * 0.35})`;
+      }
+      popIn($("tnum"), t, kNota + 0.55, { s: 0.3 });
+    });
+  cue("track", wt("track", "visto"), "pop");
+  cue("track", wt("track", "nota") + 0.55, "pop2");
+  makeBurst("track", wt("track", "nota") + 0.55, 1060, 520, 30);
+}
+
+// 4 · SERIES + AVISO
+{
+  scene("series", `
+    <div class="abs" style="inset:0;background:${img("stranger_bg")} center/cover;opacity:.35;filter:blur(6px)"></div>
+    <div class="abs" style="inset:0;background:linear-gradient(90deg,rgba(5,11,16,.9),rgba(5,11,16,.4))"></div>
+    <div id="spost" class="poster" style="left:100px;top:150px;width:280px;height:420px;border-radius:22px;background-image:${img("stranger")}"></div>
+    <div id="scard" class="card" style="left:440px;top:210px;width:740px;height:300px;padding:34px 40px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:36px;font-weight:800">Stranger Things</div><div style="font-size:22px;color:#64748b">Temporada 4</div></div>
+      <div style="position:relative;height:64px;margin-top:30px">${Array.from({ length: 9 }, (_, i) => `<div id="se${i}" class="chip" style="left:${i * 73}px;top:0px;width:64px;height:64px;font-size:19px">E${i + 1}</div>`).join("")}</div>
+      <div style="height:18px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin-top:30px"><div id="sbar" style="height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#14b8a6,#10b981)"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:22px;font-weight:700"><span id="sdone" style="color:#059669;opacity:0">✓ ¡Temporada completada!</span><span id="spct" style="color:#0f172a">0%</span></div>
+    </div>
+    <div id="snotif" class="abs" style="left:330px;top:30px;width:620px;height:110px;border-radius:28px;background:rgba(250,250,250,.96);color:#111;display:flex;align-items:center;gap:20px;padding:0 24px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+      <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#14b8a6,#0f766e);display:grid;place-items:center;color:#fff;flex:none">${CLAP(40)}</div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;font-size:18px;color:#6b7280"><b style="color:#111">Claqueta</b><span>ahora</span></div>
+      <div style="font-size:22px;font-weight:700;margin-top:4px">🎬 ¡Nuevo episodio!</div><div style="font-size:19px;color:#374151">Stranger Things · T5 E1 ya disponible</div></div>
+    </div>`,
+    (t) => {
+      popIn($("spost"), t, 0, { y: 60, s: 0.85 });
+      popIn($("scard"), t, 0.1, { y: 60, s: 0.92 });
+      const k0 = wt("series", "capitulo") - 0.35;
+      let done = 0;
+      for (let i = 0; i < 9; i++) {
+        const x = pr(t, k0 + i * 0.13, 0.18);
+        done += x;
+        const e = $("se" + i);
+        S(e, { background: x > 0.5 ? "#10b981" : "#f1f5f9", color: x > 0.5 ? "#fff" : "#64748b", transform: `scale(${1 + Math.sin(x * Math.PI) * 0.28})` });
+        e.textContent = x > 0.5 ? "✓" : `E${i + 1}`;
+      }
+      const pct = Math.round((done / 9) * 100);
+      $("sbar").style.width = pct + "%";
+      $("spct").textContent = pct + "%";
+      popIn($("sdone"), t, k0 + 9 * 0.13 + 0.05, { y: 10 });
+      const kn = wt("series", "avisamos") - 0.15;
+      const n = pr(t, kn, 0.5);
+      S($("snotif"), { opacity: clamp(n * 3), transform: `translateY(${(1 - back(n)) * -160}px) scale(${1 + Math.sin(pr(t, kn + 0.5, 0.3) * Math.PI) * 0.03})` });
+    });
+  const k0 = wt("series", "capitulo") - 0.35;
+  for (let i = 0; i < 9; i += 2) cue("series", k0 + i * 0.13 + 0.09, i % 4 ? "pop2" : "pop");
+  cue("series", wt("series", "avisamos") - 0.1, "ding");
+}
+
+// 5 · ¿QUÉ VEO HOY?
+{
+  const reel = ["w3", "w8", "w12", "w5", "w20", "w1", "w15", "w9", "w27", "w6", "w11", "w2", "w18", "w4", "interstellar", "w7", "w14"];
+  const target = reel.indexOf("interstellar");
+  const W = 230;
+  scene("random", `
+    <div id="rbtn" class="abs pill" style="left:390px;top:70px;width:500px;height:96px;font-size:40px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#3b2300;box-shadow:0 18px 50px rgba(245,158,11,.45)">🎲 ¿Qué veo hoy?</div>
+    <div id="rwin" class="abs" style="left:0;right:0;top:220px;height:390px;overflow:hidden">
+      <div id="rreel" class="abs" style="top:30px;left:0;height:330px">${reel.map((k, i) => `<div id="rp${i}" class="poster" style="left:${i * W}px;top:0;width:210px;height:315px;background-image:url('${P[k] ?? P.wall[i]}')"></div>`).join("")}</div>
+    </div>
+    <div id="rframe" class="abs" style="left:524px;top:236px;width:232px;height:358px;border-radius:20px;border:5px solid #fbbf24;box-shadow:0 0 60px rgba(251,191,36,.6);opacity:0"></div>
+    <div id="rwin2" class="abs h1" style="left:0;right:0;top:628px;text-align:center;font-size:44px;opacity:0">Esta noche: <span class="amber">Interstellar</span> 🍿</div>`,
+    (t) => {
+      const kp = wt("random", "pulsa");
+      popIn($("rbtn"), t, 0, { y: -30 });
+      const press = pr(t, kp + 0.1, 0.08) * (1 - pr(t, kp + 0.2, 0.15));
+      $("rbtn").style.transform += ` scale(${1 - press * 0.12})`;
+      // la ruleta arranca al pulsar y frena hasta centrar el ganador
+      const spinA = kp + 0.15, land = wt("random", "listo") - 0.05;
+      const x = eo(pr(t, spinA, land - spinA));
+      const startOff = -2 * W, endOff = 640 - 105 - target * W;
+      const off = t < spinA ? startOff + t * -40 : lerp(startOff - spinA * 40, endOff, x);
+      $("rreel").style.transform = `translateX(${off}px)`;
+      for (let i = 0; i < reel.length; i++) {
+        const cx = off + i * W + 105 - 640;
+        const sel = i === target ? pr(t, land, 0.35) : 0;
+        S($("rp" + i), { transform: `scale(${1 - Math.min(0.25, Math.abs(cx) / 2200) + back(sel) * 0.08})`, opacity: i === target || t < land ? 1 : 1 - 0.6 * pr(t, land, 0.3) });
+      }
+      S($("rframe"), { opacity: pr(t, land, 0.2), transform: `scale(${lerp(1.2, 1.08, back(pr(t, land, 0.35)))})` });
+      popIn($("rwin2"), t, land + 0.2, { y: 30 });
+    });
+  cue("random", wt("random", "pulsa") + 0.1, "pop");
+  cue("random", wt("random", "listo") - 0.05, "ding");
+  makeBurst("random", wt("random", "listo"), 640, 400, 44);
+}
+
+// 6 · GENTE Y AMIGOS
+{
+  const people = [["Lucía", 94, "#f472b6,#db2777"], ["Marcos", 87, "#60a5fa,#2563eb"], ["Sara", 81, "#a78bfa,#7c3aed"]];
+  const feed = [["Lucía", "ha visto", "oppen", "★ 9"], ["Marcos", "está viendo", "bear", ""], ["Sara", "quiere ver", "wednesday", ""]];
+  scene("friends", `
+    <div class="abs h1" id="fh" style="left:80px;top:60px;font-size:54px;opacity:0">Gente con <span class="accent">tus gustos</span></div>
+    ${people.map(([n, p, g], i) => `<div id="fp${i}" class="glass" style="left:80px;top:${160 + i * 170}px;width:470px;height:150px;display:flex;align-items:center;gap:24px;padding:0 28px">
+      <div class="avatar" style="width:92px;height:92px;font-size:40px;background:linear-gradient(135deg,${g})">${n[0]}</div>
+      <div style="flex:1"><div style="font-size:30px;font-weight:800">${n}</div><div style="font-size:20px;color:#99f6e4">te va a encantar su lista</div></div>
+      <div style="text-align:right"><div id="fpc${i}" style="font-size:42px;font-weight:900;color:#fbbf24;font-variant-numeric:tabular-nums">0%</div><div style="font-size:16px;color:#ccfbf1;font-weight:600">afinidad</div></div></div>`).join("")}
+    <div id="ffeedh" class="abs" style="left:620px;top:150px;font-size:24px;font-weight:700;color:#99f6e4;opacity:0">👀 Tus amigos ahora</div>
+    ${feed.map(([n, v, k, r], i) => `<div id="ff${i}" class="card" style="left:620px;top:${200 + i * 140}px;width:580px;height:120px;border-radius:22px;display:flex;align-items:center;gap:18px;padding:0 20px">
+      <div class="avatar" style="width:60px;height:60px;font-size:26px;background:linear-gradient(135deg,${people[i][2]})">${n[0]}</div>
+      <div style="flex:1;font-size:23px;line-height:1.3"><b>${n}</b> <span style="color:#64748b">${v}</span><br><b style="color:#0f766e">${k === "oppen" ? "Oppenheimer" : k === "bear" ? "The Bear" : "Miércoles"}</b> ${r ? `<span class="pill" style="background:#111;color:#fbbf24;font-size:18px;padding:2px 10px;margin-left:6px">${r}</span>` : ""}</div>
+      <div class="poster" style="position:relative;width:58px;height:86px;border-radius:10px;background-image:${img(k)}"></div></div>`).join("")}`,
+    (t) => {
+      popIn($("fh"), t, 0, { y: 20 });
+      people.forEach(([, p], i) => {
+        popIn($("fp" + i), t, 0.1 + i * 0.15, { y: 0, s: 0.9, extra: `translateX(${(1 - eo(pr(t, 0.1 + i * 0.15, 0.4))) * -80}px)` });
+        $("fpc" + i).textContent = Math.round(p * eo(pr(t, 0.4 + i * 0.15, 1.1))) + "%";
+      });
+      const km = wt("friends", "mira") - 0.1;
+      popIn($("ffeedh"), t, km - 0.1, { y: 10 });
+      feed.forEach((_, i) => popIn($("ff" + i), t, km + i * 0.22, { y: 0, s: 0.9, extra: `translateX(${(1 - eo(pr(t, km + i * 0.22, 0.4))) * 120}px)` }));
+    });
+  const km = wt("friends", "mira") - 0.1;
+  [0, 1, 2].forEach((i) => cue("friends", km + i * 0.22, i ? "pop2" : "pop"));
+}
+
+// 7 · LISTAS Y CALENDARIO
+{
+  const days = 30, first = 6; // noviembre 2026 empieza en domingo (lunes = 0)
+  const marks = { 6: "w4", 12: "w10", 13: "w16", 20: "w22", 25: "w0", 27: "w13" };
+  let cells = "";
+  for (let i = 0; i < 35; i++) {
+    const d = i - first + 1;
+    const ok = d >= 1 && d <= days;
+    cells += `<div style="position:relative;height:62px;border-radius:12px;background:${ok ? "#f8fafc" : "transparent"};font-size:16px;font-weight:700;color:#94a3b8;padding:5px 8px">${ok ? d : ""}${ok && marks[d] ? `<div id="cm${d}" class="poster" style="right:5px;top:5px;width:36px;height:52px;border-radius:7px;background-image:url('${P[marks[d]]}')"></div>` : ""}</div>`;
+  }
+  scene("calendar", `
+    <div id="clist" class="glass" style="left:70px;top:130px;width:420px;height:460px;padding:30px">
+      <div style="font-size:18px;font-weight:700;color:#99f6e4">MI LISTA</div>
+      <div style="font-size:34px;font-weight:800;margin-top:6px;line-height:1.1">Maratón<br>Harry Potter ⚡</div>
+      <div class="pill" style="margin-top:14px;height:36px;padding:0 16px;font-size:16px;background:rgba(255,255,255,.15)">👥 Solo amigos</div>
+      ${["hp1", "hp2", "hp3"].map((k, i) => `<div id="ch${i}" class="poster" style="left:${40 + i * 110}px;top:250px;width:130px;height:195px;background-image:${img(k)}"></div>`).join("")}
+    </div>
+    <div id="ccal" class="card" style="left:530px;top:110px;width:680px;height:500px;padding:26px 30px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:30px;font-weight:800">📅 Noviembre</div><div class="pill" style="height:36px;padding:0 16px;font-size:16px;background:#ccfbf1;color:#0f766e">Estrenos</div></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:16px;font-size:14px;font-weight:700;color:#64748b;text-align:center">${["L", "M", "X", "J", "V", "S", "D"].map((d) => `<div>${d}</div>`).join("")}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:8px">${cells}</div>
+    </div>`,
+    (t) => {
+      popIn($("clist"), t, 0, { y: 50, s: 0.9 });
+      [0, 1, 2].forEach((i) => popIn($("ch" + i), t, 0.25 + i * 0.15, { y: 80, s: 0.6, extra: `rotate(${(i - 1) * 8}deg)` }));
+      popIn($("ccal"), t, 0.15, { y: 50, s: 0.92 });
+      const kc = wt("calendar", "calendario") - 0.2;
+      Object.keys(marks).forEach((d, i) => popIn($("cm" + d), t, kc + i * 0.12, { y: -20, s: 0.2 }));
+    });
+  const kc = wt("calendar", "calendario") - 0.2;
+  [0, 2, 4].forEach((i) => cue("calendar", kc + i * 0.12, i === 2 ? "pop2" : "pop"));
+}
+
+// 8 · RESUMEN DEL AÑO
+{
+  const stats = [["horas vistas", 214, "h"], ["películas", 96, ""], ["series", 38, ""]];
+  const genres = [["Ciencia ficción", 34, "#5eead4"], ["Drama", 26, "#fbbf24"], ["Comedia", 18, "#f472b6"]];
+  scene("recap", `
+    <div id="rh" class="abs h1" style="left:80px;top:60px;font-size:60px;opacity:0">Tu <span class="accent">2026</span> en Claqueta ✨</div>
+    ${stats.map(([l, n, u], i) => `<div id="rs${i}" class="glass" style="left:${80 + i * 250}px;top:175px;width:225px;height:170px;padding:24px">
+      <div id="rn${i}" style="font-size:62px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums;color:${["#5eead4", "#fbbf24", "#f9a8d4"][i]}">0</div>
+      <div style="font-size:21px;color:#ccfbf1;font-weight:600">${l}</div></div>`).join("")}
+    <div id="rg" class="glass" style="left:80px;top:370px;width:725px;height:250px;padding:28px 30px">
+      <div style="font-size:22px;font-weight:700;color:#99f6e4">Tus géneros</div>
+      ${genres.map(([g, p, c], i) => `<div style="margin-top:18px;display:flex;align-items:center;gap:16px"><div style="width:190px;font-size:22px;font-weight:700">${g}</div>
+        <div style="flex:1;height:26px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden"><div id="rgb${i}" style="height:100%;width:0;border-radius:999px;background:${c}"></div></div><div id="rgp${i}" style="width:60px;text-align:right;font-size:22px;font-weight:800">0%</div></div>`).join("")}
+    </div>
+    <div id="rfav" class="abs" style="left:860px;top:150px;width:340px;opacity:0;text-align:center">
+      <div style="font-size:22px;font-weight:700;color:#fbbf24;margin-bottom:14px">🏆 Tu favorita</div>
+      <div class="poster" style="position:relative;width:300px;height:450px;margin:0 auto;border-radius:24px;background-image:${img("dune")};box-shadow:0 0 0 4px #fbbf24,0 30px 80px rgba(251,191,36,.35)"></div>
+    </div>`,
+    (t) => {
+      popIn($("rh"), t, 0, { y: 20 });
+      const kh = wt("recap", "horas") - 0.2;
+      stats.forEach(([, n, u], i) => {
+        popIn($("rs" + i), t, 0.15 + i * 0.12, { y: 40, s: 0.85 });
+        $("rn" + i).innerHTML = Math.round(n * eo(pr(t, kh + i * 0.2, 1.2))) + (u ? `<span style="font-size:34px"> ${u}</span>` : "");
+      });
+      popIn($("rg"), t, 0.4, { y: 40, s: 0.95 });
+      const kg = wt("recap", "generos") - 0.2;
+      genres.forEach(([, p], i) => {
+        const x = eo(pr(t, kg + i * 0.15, 0.9));
+        $("rgb" + i).style.width = p * 2.2 * x + "%";
+        $("rgp" + i).textContent = Math.round(p * x) + "%";
+      });
+      const kf = wt("recap", "mucho") - 0.3;
+      popIn($("rfav"), t, kf, { y: 60, s: 0.7, extra: `rotate(${(1 - back(pr(t, kf, 0.45))) * 8}deg)` });
+    });
+  cue("recap", wt("recap", "mucho") - 0.3, "pop2");
+  makeBurst("recap", wt("recap", "mucho") - 0.1, 1030, 380, 40);
+}
+
+// 9 · CIERRE
+{
+  scene("cta", `
+    ${wallHTML("cw")}
+    <div class="abs" style="inset:0;background:radial-gradient(60% 70% at 50% 50%,rgba(6,26,26,.82),rgba(5,11,16,.95))"></div>
+    <div id="clogo" class="abs" style="left:560px;top:96px;width:160px;height:160px;border-radius:40px;background:linear-gradient(135deg,#14b8a6,#0f766e);display:grid;place-items:center;color:#fff;box-shadow:0 24px 70px rgba(20,184,166,.55)">${CLAP(96, "cstick")}</div>
+    <div id="cname" class="abs h1" style="left:0;right:0;top:282px;text-align:center;font-size:100px;opacity:0">Claqueta</div>
+    <div id="cfree" class="abs pill" style="left:525px;top:410px;width:230px;height:62px;font-size:32px;background:#fbbf24;color:#3b2300;transform:rotate(-6deg);opacity:0">¡GRATIS!</div>
+    <div id="cbtn" class="abs pill" style="left:440px;top:505px;width:400px;height:86px;font-size:34px;background:#fff;color:#0f766e;opacity:0">Empieza hoy →</div>
+    <div id="curl" class="abs" style="left:0;right:0;top:618px;text-align:center;font-size:30px;font-weight:700;color:#99f6e4;opacity:0">miclaqueta.com</div>`,
+    (t) => {
+      wallMove("cw", t, 25);
+      popIn($("clogo"), t, 0, { y: -50, s: 0.5 });
+      $("cstick").style.transform = `rotate(${lerp(-26, 0, pr(t, 0.25, 0.1))}deg)`;
+      popIn($("cname"), t, 0.15, { y: 40, s: 0.7 });
+      const kg = wt("cta", "gratis") - 0.08;
+      const g = pr(t, kg, 0.35);
+      S($("cfree"), { opacity: clamp(g * 3), transform: `rotate(-6deg) scale(${lerp(2.6, 1, back(g))})` });
+      const ke = wt("cta", "empieza") - 0.1;
+      popIn($("cbtn"), t, ke, { y: 30, s: 0.7 });
+      const pulse = t > ke + 0.5 ? 1 + 0.04 * Math.sin((t - ke) * 6) : 1;
+      $("cbtn").style.transform += ` scale(${pulse})`;
+      $("cbtn").style.boxShadow = `0 0 ${30 + 30 * Math.sin((t - ke) * 6)}px rgba(94,234,212,.7)`;
+      popIn($("curl"), t, ke + 0.35, { y: 15 });
+    });
+  cue("cta", 0.3, "boom");
+  cue("cta", wt("cta", "gratis") - 0.08, "boom");
+  cue("cta", wt("cta", "empieza") - 0.1, "pop2");
+  makeBurst("cta", wt("cta", "gratis"), 640, 440, 50);
+}
+
+// ---------- Fotograma ----------
+window.render = function (T) {
+  S($("b1"), { transform: `translate(${Math.sin(T * 0.4) * 80}px,${Math.cos(T * 0.3) * 60}px)` });
+  S($("b2"), { transform: `translate(${Math.cos(T * 0.35) * 90}px,${Math.sin(T * 0.45) * 50}px)` });
+  for (const sc of scenes) {
+    const a = sc.s.start, b = a + sc.s.dur;
+    const vis = T >= a - 0.2 && T < b + 0.2;
+    sc.el.style.display = vis ? "block" : "none";
+    if (!vis) continue;
+    const enter = sc.id === "hook" ? 1 : eo(pr(T, a - 0.12, 0.3));
+    const exit = sc.id === "cta" ? 0 : eio(pr(T, b - 0.15, 0.3));
+    S(sc.el, { opacity: Math.min(enter, 1 - exit), transform: `scale(${lerp(0.9, 1, enter) * lerp(1, 1.12, exit)}) translateX(${(1 - enter) * 60}px)` });
+    sc.update(Math.max(0, T - a));
+  }
+  // Destello al aparecer la marca
+  const fb = SC.brand.start + 0.42;
+  $("flash").style.opacity = T >= fb ? 0.55 * Math.exp(-(T - fb) * 9) : 0;
+  renderBursts(T);
+  const fadeOut = pr(T, TL.total - 0.5, 0.5);
+  $("stage").style.filter = fadeOut ? `brightness(${1 - fadeOut})` : "";
+};
+window.CUES = CUES.sort((a, b) => a[0] - b[0]);
+window.READY = true;
+</script>
+</body>
+</html>

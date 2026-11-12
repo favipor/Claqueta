@@ -6,3 +6,8 @@ next-env.d.ts
 *.tsbuildinfo
 .vercel
 .next-check
+
+# Local explainer build and browser verification
+.next-guide-check
+scripts/guide/work/
+scripts/guide/checks/
