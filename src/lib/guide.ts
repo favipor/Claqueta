@@ -187,7 +187,7 @@ const guides: Record<Lang, Guide> = {
         "text": [
           "Cambia entre español e inglés desde el selector de idioma de la navegación. El botón de tema está abajo a la derecha, encima del de accesibilidad.",
           "Abre el panel de accesibilidad para ajustar el tamaño de letra, el contraste, la fuente para dislexia, las animaciones y el subrayado de enlaces. Las preferencias de apariencia se guardan en este navegador.",
-          "Puedes instalar Claqueta desde el botón de instalación cuando el navegador lo permita. El vídeo «Ver cómo funciona» tiene subtítulos y su transcripción, y puedes pausarlo o silenciarlo cuando quieras."
+          "Puedes instalar Claqueta desde el botón de instalación cuando el navegador lo permita. El vídeo «Ver cómo funciona» tiene subtítulos y puedes pausarlo o silenciarlo cuando quieras."
         ]
       }
     ]
@@ -374,7 +374,7 @@ const guides: Record<Lang, Guide> = {
         "text": [
           "Switch between Spanish and English in the navigation language selector. The theme button is at the bottom right, above accessibility.",
           "Open the accessibility panel to adjust text size, contrast, the dyslexia font, motion and link underlining. Appearance preferences are saved in this browser.",
-          "Install Claqueta using the install button when supported by your browser. The “How it works” video has captions and a transcript, and you can pause or mute it at any time."
+          "Install Claqueta using the install button when supported by your browser. The “How it works” video has captions and you can pause or mute it at any time."
         ]
       }
     ]
