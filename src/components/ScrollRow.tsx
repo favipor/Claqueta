@@ -23,7 +23,7 @@ export function ScrollRow({ children, label }: { children: ReactNode; label: str
         ref={ref}
         role="region"
         aria-label={label}
-        className="no-scrollbar flex snap-x snap-mandatory gap-4 -mx-3 -my-7 overflow-x-auto scroll-smooth scroll-px-3 px-3 py-10 sm:-mx-5 sm:scroll-px-5 sm:px-5"
+        className="no-scrollbar flex snap-x snap-mandatory gap-4 -my-7 overflow-x-auto scroll-smooth py-10"
       >
         {children}
       </div>
