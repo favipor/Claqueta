@@ -421,17 +421,13 @@ function wallMove(prefix, t, speed) {
     <div class="abs" style="inset:0;background:radial-gradient(60% 70% at 50% 50%,rgba(6,26,26,.82),rgba(5,11,16,.95))"></div>
     <div id="clogo" class="abs" style="left:560px;top:96px;width:160px;height:160px;border-radius:40px;background:linear-gradient(135deg,#14b8a6,#0f766e);display:grid;place-items:center;color:#fff;box-shadow:0 24px 70px rgba(20,184,166,.55)">${CLAP(96, "cstick")}</div>
     <div id="cname" class="abs h1" style="left:0;right:0;top:282px;text-align:center;font-size:100px;opacity:0">Claqueta</div>
-    <div id="cfree" class="abs pill" style="left:525px;top:410px;width:230px;height:62px;font-size:32px;background:#fbbf24;color:#3b2300;transform:rotate(-6deg);opacity:0">¡GRATIS!</div>
-    <div id="cbtn" class="abs pill" style="left:440px;top:505px;width:400px;height:86px;font-size:34px;background:#fff;color:#0f766e;opacity:0">Empieza hoy →</div>
-    <div id="curl" class="abs" style="left:0;right:0;top:618px;text-align:center;font-size:30px;font-weight:700;color:#99f6e4;opacity:0">miclaqueta.com</div>`,
+    <div id="cbtn" class="abs pill" style="left:440px;top:460px;width:400px;height:86px;font-size:34px;background:#fff;color:#0f766e;opacity:0">Empieza hoy →</div>
+    <div id="curl" class="abs" style="left:0;right:0;top:580px;text-align:center;font-size:30px;font-weight:700;color:#99f6e4;opacity:0">miclaqueta.com</div>`,
     (t) => {
       wallMove("cw", t, 25);
       popIn($("clogo"), t, 0, { y: -50, s: 0.5 });
       $("cstick").style.transform = `rotate(${lerp(-26, 0, pr(t, 0.25, 0.1))}deg)`;
       popIn($("cname"), t, 0.15, { y: 40, s: 0.7 });
-      const kg = wt("cta", "gratis") - 0.08;
-      const g = pr(t, kg, 0.35);
-      S($("cfree"), { opacity: clamp(g * 3), transform: `rotate(-6deg) scale(${lerp(2.6, 1, back(g))})` });
       const ke = wt("cta", "empieza") - 0.1;
       popIn($("cbtn"), t, ke, { y: 30, s: 0.7 });
       const pulse = t > ke + 0.5 ? 1 + 0.04 * Math.sin((t - ke) * 6) : 1;
@@ -440,9 +436,8 @@ function wallMove(prefix, t, speed) {
       popIn($("curl"), t, ke + 0.35, { y: 15 });
     });
   cue("cta", 0.3, "boom");
-  cue("cta", wt("cta", "gratis") - 0.08, "boom");
-  cue("cta", wt("cta", "empieza") - 0.1, "pop2");
-  makeBurst("cta", wt("cta", "gratis"), 640, 440, 50);
+  cue("cta", wt("cta", "empieza") - 0.1, "boom");
+  makeBurst("cta", wt("cta", "empieza"), 640, 500, 50);
 }
 
 // ---------- Fotograma ----------
