@@ -17,6 +17,7 @@ function titleFor(type: string) {
     case "follow_accepted": return "✅ Solicitud aceptada";
     case "new_episode": return "📺 Capítulo nuevo";
     case "new_user": return "🆕 Nuevo registro";
+    case "app_error": return "⚠️ Error en Claqueta";
     default: return "Claqueta";
   }
 }
@@ -63,6 +64,10 @@ export async function POST(request: Request) {
     case "new_episode":
       body = `${t("notif.new_episode")} ${titleName}`.trim();
       url = titleUrl;
+      break;
+    case "app_error":
+      body = t("notif.app_error");
+      url = "/admin#errores";
       break;
     case "message":
     case "recommendation":

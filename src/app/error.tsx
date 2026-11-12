@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { ClapperIcon } from "@/components/ClapperIcon";
+import { reportError } from "@/components/Telemetry";
 
 // Si algo falla al cargar una página se muestra esto en lugar de la pantalla de error genérica
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const { t } = useI18n();
   useEffect(() => {
     console.error(error);
+    reportError(error.message || "Error al cargar la página", error.stack, error.digest);
   }, [error]);
 
   return (

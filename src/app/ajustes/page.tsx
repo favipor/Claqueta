@@ -5,6 +5,7 @@ import { BlockedList } from "@/components/BlockedList";
 import { SettingsForm } from "@/components/SettingsForm";
 import { ProvidersPicker } from "@/components/ProvidersPicker";
 import { PushToggle } from "@/components/PushToggle";
+import { DeleteAccount } from "@/components/DeleteAccount";
 import { getProviders } from "@/lib/tmdb";
 import { getT } from "@/lib/i18n-server";
 
@@ -58,6 +59,7 @@ export default async function SettingsPage() {
       <ProvidersPicker providers={allProviders} initial={((provRow?.providers as number[] | null) ?? [])} />
     )}
     <BlockedList people={(blockedPeople ?? []) as any} />
+    <DeleteAccount username={p.username} />
     </>
   );
 }

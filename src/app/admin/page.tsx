@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminUsers, type AdminStats, type AdminUserRow } from "@/components/AdminUsers";
 import { AdminStorage, type DbUsage } from "@/components/AdminStorage";
+import { AdminAnalytics, type Analytics, type ErrorRow } from "@/components/AdminAnalytics";
 import { AdminPanel, type BlockedItem, type ReportItem } from "@/components/AdminPanel";
 
 export const metadata = { title: "Admin" };
@@ -92,10 +93,12 @@ export default async function AdminPage({
   });
 
   // Usuarios registrados (solo disponible si se ha ejecutado phase7.sql)
-  const [{ data: statsData }, { data: usersData }, { data: usageData }] = await Promise.all([
+  const [{ data: statsData }, { data: usersData }, { data: usageData }, { data: analyticsData }, { data: errorsData }] = await Promise.all([
     supabase.rpc("admin_stats"),
     supabase.rpc("admin_users", { p_q: q, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE }),
     supabase.rpc("admin_db_usage"), // solo existe tras ejecutar phase8.sql
+    supabase.rpc("admin_analytics", { p_days: 30 }), // phase10.sql
+    supabase.rpc("admin_errors", { p_limit: 30 }),
   ]);
   const userRows = (usersData ?? []) as (AdminUserRow & { total: number })[];
   const total = Number(userRows[0]?.total ?? 0);
@@ -113,6 +116,7 @@ export default async function AdminPage({
           pageSize={PAGE_SIZE}
         />
       ) : null}
+      <AdminAnalytics data={(analyticsData ?? null) as Analytics | null} errors={(errorsData ?? null) as ErrorRow[] | null} />
       {usageData ? <AdminStorage usage={usageData as DbUsage} /> : null}
       <AdminPanel reports={reports} blocked={blocked} />
     </div>

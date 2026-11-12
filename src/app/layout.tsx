@@ -7,6 +7,7 @@ import { A11yPanel } from "@/components/A11yPanel";
 import { ScrollTop } from "@/components/ScrollTop";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MyTitlesSync } from "@/components/MyTitles";
+import { Telemetry } from "@/components/Telemetry";
 import { Footer } from "@/components/Footer";
 import { Splash } from "@/components/Splash";
 import { I18nProvider } from "@/components/I18nProvider";
@@ -97,6 +98,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <ThemeToggle />
           <A11yPanel />
           <MyTitlesSync />
+          <Telemetry />
         </I18nProvider>
       </body>
     </html>

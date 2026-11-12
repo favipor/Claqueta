@@ -107,3 +107,11 @@ export async function adminDeleteUser(
   revalidatePath("/admin");
   return { ok: true };
 }
+
+// Vacía el registro de errores
+export async function clearErrors(): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_clear_errors");
+  revalidatePath("/admin");
+  return { ok: !error };
+}

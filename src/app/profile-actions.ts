@@ -236,3 +236,29 @@ export async function sendTestPush(): Promise<{ ok: boolean; sent: number }> {
   });
   return { ok: sent > 0, sent };
 }
+
+// Borra tu cuenta y TODOS tus datos (títulos, listas, mensajes, foto...). No se puede deshacer.
+// Hay que escribir el @usuario para confirmar.
+export async function deleteMyAccount(confirmUsername: string): Promise<{ ok: boolean; error?: "confirm" | "server" }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "server" };
+  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+  const expected = (profile?.username ?? "").toLowerCase();
+  if (!expected || confirmUsername.trim().replace(/^@/, "").toLowerCase() !== expected) return { ok: false, error: "confirm" };
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "server" };
+  // Foto de perfil
+  const { data: files } = await admin.storage.from("avatars").list(user.id);
+  if (files?.length) await admin.storage.from("avatars").remove(files.map((f) => `${user.id}/${f.name}`));
+  // La cuenta: el resto de datos se borra en cascada
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) return { ok: false, error: "server" };
+  await supabase.auth.signOut().catch(() => {});
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

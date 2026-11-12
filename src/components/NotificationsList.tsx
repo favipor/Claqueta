@@ -12,7 +12,7 @@ import type { DictKey } from "@/lib/dict";
 
 export type NotifItem = {
   id: string;
-  type: "follow_request" | "follow" | "follow_accepted" | "reply" | "mention" | "recommendation" | "message" | "new_user" | "new_episode";
+  type: "follow_request" | "follow" | "follow_accepted" | "reply" | "mention" | "recommendation" | "message" | "new_user" | "new_episode" | "app_error";
   unread: boolean;
   createdAt: string;
   actor: { id: string; username: string | null; name: string; avatarUrl: string | null } | null;
@@ -82,7 +82,11 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
                   : "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
               }`}
             >
-              {n.type === "new_episode" ? (
+              {n.type === "app_error" ? (
+                <span aria-hidden="true" className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xl text-white">
+                  ⚠️
+                </span>
+              ) : n.type === "new_episode" ? (
                 <span aria-hidden="true" className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand to-teal-400 text-white">
                   <ClapperIcon className="h-6 w-6" />
                 </span>
@@ -95,7 +99,14 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
               )}
               <div className="min-w-0 flex-1 text-sm">
                 <p>
-                  {n.type === "new_episode" ? (
+                  {n.type === "app_error" ? (
+                    <Link
+                      href="/admin#errores"
+                      className="font-semibold after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-fg"
+                    >
+                      {text}
+                    </Link>
+                  ) : n.type === "new_episode" ? (
                     <Link
                       href={n.href ?? "#"}
                       className="font-semibold after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-fg"

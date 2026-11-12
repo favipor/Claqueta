@@ -1,0 +1,41 @@
+# Copia de seguridad semanal de la base de datos de Claqueta.
+# El repositorio es público: la copia se CIFRA con BACKUP_PASSPHRASE antes de guardarse,
+# así que sin esa contraseña nadie puede leerla. Se conserva 90 días (pestaña Actions → la ejecución → Artifacts).
+# Descifrar:  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in backup.json.gz.enc -out backup.json.gz -pass pass:LA_CONTRASEÑA && gunzip backup.json.gz
+name: Copia de seguridad
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # lunes a las 3:00 UTC
+  workflow_dispatch: {} # también se puede lanzar a mano
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Exportar datos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/backup.mjs
+      - name: Comprimir y cifrar
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$BACKUP_PASSPHRASE"
+          gzip -9 backup.json
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in backup.json.gz -out backup.json.gz.enc -pass env:BACKUP_PASSPHRASE
+          rm backup.json.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: claqueta-backup-${{ github.run_number }}
+          path: backup.json.gz.enc
+          retention-days: 90

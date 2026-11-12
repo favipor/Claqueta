@@ -53,7 +53,7 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
           {
             title: "8. Contact and your rights",
             body: [
-              `For any question about your data, or to ask for access, correction, deletion or a copy of it, write to ${L.email}. You can also export your list to Excel from the app, and if you want your account deleted, write to us and we will remove it with all your data. If you are not satisfied with the answer, you can complain to the Spanish Data Protection Agency (aepd.es).`,
+              `For any question about your data, or to ask for access, correction, deletion or a copy of it, write to ${L.email}. You can also export your list to Excel and delete your account with all your data from Settings. If you are not satisfied with the answer, you can complain to the Spanish Data Protection Agency (aepd.es).`,
             ],
           },
         ],
@@ -133,7 +133,7 @@ export function getLegal(lang: "es" | "en"): Record<"privacy" | "cookies" | "ter
         {
           title: "8. Contacto y tus derechos",
           body: [
-            `Para cualquier duda sobre tus datos, o para pedir acceso, rectificación, supresión o una copia de ellos, escribe a ${L.email}. También puedes exportar tu lista a Excel desde la propia web, y si quieres borrar tu cuenta, escríbenos y la eliminamos con todos tus datos. Si no quedas conforme con la respuesta, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).`,
+            `Para cualquier duda sobre tus datos, o para pedir acceso, rectificación, supresión o una copia de ellos, escribe a ${L.email}. También puedes exportar tu lista a Excel y eliminar tu cuenta con todos tus datos desde Ajustes. Si no quedas conforme con la respuesta, puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).`,
           ],
         },
       ],
