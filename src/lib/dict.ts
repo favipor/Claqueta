@@ -639,6 +639,9 @@ const es = {
   "recs.mixSub": "según tus mejores notas",
   "recs.genreSub": "lo mejor de",
   "recs.empty": "No hay nada nuevo por aquí: prueba otra opción o pulsa Sorpresa.",
+  "footer.search": "Buscar",
+  "footer.privacyShort": "Privacidad",
+  "footer.cookiesShort": "Cookies",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1280,6 +1283,9 @@ const en: Record<keyof typeof es, string> = {
   "recs.mixSub": "based on your top ratings",
   "recs.genreSub": "the best of",
   "recs.empty": "Nothing new here — try another option or tap Surprise me.",
+  "footer.search": "Search",
+  "footer.privacyShort": "Privacy",
+  "footer.cookiesShort": "Cookies",
 };
 
 export type DictKey = keyof typeof es;

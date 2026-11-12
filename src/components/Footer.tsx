@@ -18,7 +18,7 @@ export async function Footer() {
         ["/peliculas", t("nav.movies")],
         ["/series", t("nav.series")],
         ["/descubrir", t("nav.discover")],
-        ["/buscar", t("nav.search")],
+        ["/buscar", t("footer.search")],
       ],
     },
     {
@@ -33,20 +33,21 @@ export async function Footer() {
     {
       title: t("footer.legal"),
       items: [
-        ["/privacidad", t("footer.privacy")],
-        ["/cookies", t("footer.cookies")],
+        ["/privacidad", t("footer.privacyShort")],
+        ["/cookies", t("footer.cookiesShort")],
         ["/aviso-legal", t("footer.terms")],
       ],
     },
   ];
 
   return (
-    <footer className="mt-12 bg-gradient-to-b from-neutral-900 to-neutral-950 text-sm text-neutral-300">
+    <footer className="mt-10 bg-gradient-to-b from-neutral-900 to-neutral-950 text-sm text-neutral-300">
       <div className="h-1 bg-gradient-to-r from-teal-400 via-brand to-emerald-500" aria-hidden="true" />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div className="space-y-4">
-          <Link href="/" className="inline-flex items-center gap-2.5 text-2xl font-extrabold text-white">
-            <ClapperIcon className="h-8 w-8 text-teal-300" />
+      {/* En el móvil: marca centrada y las tres columnas de enlaces a la par, compactas */}
+      <div className="mx-auto grid max-w-6xl gap-7 px-4 py-8 text-center sm:py-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:gap-10 lg:py-12 lg:text-left">
+        <div className="flex flex-col items-center gap-3 lg:items-start lg:gap-4">
+          <Link href="/" className="inline-flex items-center gap-2.5 text-xl font-extrabold text-white lg:text-2xl">
+            <ClapperIcon className="h-7 w-7 text-teal-300 lg:h-8 lg:w-8" />
             Claqueta
           </Link>
           <p className="max-w-xs text-neutral-400">{t("app.tagline")}</p>
@@ -59,10 +60,11 @@ export async function Footer() {
           </a>
         </div>
 
+        <div className="grid grid-cols-3 gap-2 text-[13px] sm:text-sm lg:contents">
         {cols.map((c) => (
           <nav key={c.title} aria-label={c.title}>
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-white">{c.title}</h2>
-            <ul className="space-y-2">
+            <h2 className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-white sm:text-xs lg:mb-3">{c.title}</h2>
+            <ul className="space-y-1.5 lg:space-y-2">
               {c.items.map(([href, label]) => (
                 <li key={href}>
                   <Link href={href} className={link}>
@@ -73,14 +75,15 @@ export async function Footer() {
             </ul>
           </nav>
         ))}
+        </div>
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-1.5 px-16 pb-36 pt-4 lg:px-4 text-center text-[11px] leading-relaxed text-neutral-500 sm:text-xs lg:flex-row lg:items-center lg:justify-between lg:pb-5 lg:pt-5 lg:text-left lg:text-neutral-400">
           <p>
             © {year} Claqueta. {t("footer.rights")}
           </p>
-          <p className="max-w-xl sm:text-right">{t("footer.tmdb")}</p>
+          <p className="mx-auto max-w-xl lg:mx-0 lg:text-right">{t("footer.tmdb")}</p>
         </div>
       </div>
     </footer>
