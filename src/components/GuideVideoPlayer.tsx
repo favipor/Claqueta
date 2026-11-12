@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "./I18nProvider";
-import scenes from "@/lib/guide-video.json";
 
 const SRC = "/guide/claqueta.mp4";
 
@@ -122,19 +121,9 @@ export default function GuideVideoPlayer({ onClose }: { onClose: () => void }) {
       <div className="space-y-4 p-4 sm:p-5">
         {error && (
           <p role="alert" className="rounded-xl bg-white/10 p-3 text-sm">
-            {es ? "No se ha podido cargar el vídeo. Puedes leer lo que cuenta aquí debajo." : "The video could not load. You can read what it says below."}
+            {es ? "No se ha podido cargar el vídeo. Inténtalo de nuevo más tarde." : "The video could not load. Please try again later."}
           </p>
         )}
-        <details className="rounded-xl border border-neutral-700 p-3">
-          <summary className="cursor-pointer text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">
-            {es ? "Leer lo que dice el vídeo" : "Read the transcript"}
-          </summary>
-          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-neutral-200">
-            {scenes.map((s) => (
-              <li key={s.id}>{es ? s.es : s.en}</li>
-            ))}
-          </ol>
-        </details>
         <div className="flex flex-wrap items-center gap-4 text-sm font-semibold">
           <Link href="/buscar" onClick={onClose} className="rounded-full bg-brand px-4 py-2 text-white hover:bg-brand-dark">
             {es ? "Buscar mi primer título" : "Find my first title"} →
