@@ -10,6 +10,8 @@ import { RandomPick } from "@/components/RandomPick";
 import { SORTS, type Sort } from "@/lib/list-sort";
 import { genreName } from "@/lib/genres";
 import { readWatchedForTitles } from "@/lib/tv-state";
+import { cookies } from "next/headers";
+import { PREF_COOKIES, withSavedPrefs } from "@/lib/prefs";
 
 export const metadata = { title: "Mi lista", robots: { index: false } };
 
@@ -18,7 +20,7 @@ export default async function MyListPage({
 }: {
   searchParams: Promise<{ estado?: string; tipo?: string; orden?: string; genero?: string }>;
 }) {
-  const sp = await searchParams;
+  const sp = withSavedPrefs(await searchParams, (await cookies()).get(PREF_COOKIES.myList)?.value, ["estado", "tipo", "orden", "genero"]);
   const { t } = await getT();
 
   const supabase = await createClient();

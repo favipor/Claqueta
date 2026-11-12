@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useI18n } from "./I18nProvider";
 import { FilmIcon, TvIcon } from "./NavIcons";
 import { FilterSelect } from "./FilterSelect";
+import { PREF_COOKIES, savePref } from "@/lib/prefs";
 import { STATUSES, type DictKey, type Status } from "@/lib/dict";
 import { SORTS, type Sort } from "@/lib/list-sort";
 
@@ -52,6 +53,10 @@ export function ListControls({
     if (o && o !== "reciente") q.set("orden", o);
     if (g) q.set("genero", g);
     const s = q.toString();
+    // Memoria: «todo» se guarda como vacío explícito para que no se recupere un filtro anterior
+    const mem = new URLSearchParams(q);
+    for (const k of ["estado", "tipo", "orden", "genero"]) if (!mem.has(k)) mem.set(k, "");
+    savePref(PREF_COOKIES.myList, mem.toString());
     start(() => router.push(`/mi-lista${s ? `?${s}` : ""}`, { scroll: false }));
   }
 

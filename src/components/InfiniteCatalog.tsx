@@ -151,6 +151,9 @@ export function InfiniteCatalog({
   );
 
   function refetch(nextSort: SortKey, nextGenre: GenreKey | "", nextOnlyMine: boolean = onlyMineRef.current) {
+    try {
+      localStorage.setItem(`claq_catalog:${kind}`, JSON.stringify({ sort: nextSort, genre: nextGenre, onlyMine: nextOnlyMine }));
+    } catch {}
     onlyMineRef.current = nextOnlyMine;
     setOnlyMine(nextOnlyMine);
     setSort(nextSort);
@@ -202,6 +205,19 @@ export function InfiniteCatalog({
       onlyMineRef.current = !!snap.onlyMine && hasProviders;
       setOnlyMine(onlyMineRef.current);
       setRestoreY(snap.scrollY);
+    } else {
+      // Memoria: si la última vez dejaste otro orden, género o «Solo en mis plataformas», se recupera
+      try {
+        const p = JSON.parse(localStorage.getItem(`claq_catalog:${kind}`) || "null") as
+          | { sort?: SortKey; genre?: GenreKey | ""; onlyMine?: boolean }
+          | null;
+        if (p) {
+          const nextSort = p.sort && SORT_OPTIONS.includes(p.sort) ? p.sort : "popularity";
+          const nextGenre = p.genre ?? "";
+          const nextOnly = !!p.onlyMine && hasProviders;
+          if (nextSort !== "popularity" || nextGenre !== "" || nextOnly) refetch(nextSort, nextGenre, nextOnly);
+        }
+      } catch {}
     }
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps

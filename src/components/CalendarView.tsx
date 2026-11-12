@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { img, type MediaType } from "@/lib/tmdb";
 import { useI18n } from "./I18nProvider";
+import { PREF_COOKIES, savePref } from "@/lib/prefs";
 
 export type CalMode = "estrenos" | "visto" | "ambos";
 export type CalEvent = {
@@ -76,6 +77,11 @@ export function CalendarView({
     if (mes !== `${today.getFullYear()}-${pad(today.getMonth() + 1)}`) q.set("mes", mes);
     if (ver !== "ambos") q.set("ver", ver);
     if (cine && ver !== "visto") q.set("cine", "1");
+    // Memoria: el filtro y el interruptor de cine (no el mes, que siempre empieza en el actual)
+    const mem = new URLSearchParams();
+    mem.set("ver", ver);
+    mem.set("cine", cine ? "1" : "0");
+    savePref(PREF_COOKIES.calendar, mem.toString());
     const s = q.toString();
     start(() => router.push(`/calendario${s ? `?${s}` : ""}`, { scroll: false }));
   }

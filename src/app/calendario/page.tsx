@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
 import { getAirSchedule, getUpcomingMovies, type AirItem, type MediaType } from "@/lib/tmdb";
 import { CalendarView, type CalEvent, type CalMode } from "@/components/CalendarView";
+import { cookies } from "next/headers";
+import { PREF_COOKIES, withSavedPrefs } from "@/lib/prefs";
 
 export const metadata = { title: "Calendario", robots: { index: false } };
 
@@ -14,7 +16,8 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ mes?: string; ver?: string; cine?: string }>;
 }) {
-  const sp = await searchParams;
+  // Si no vienen filtros en la dirección, se usan los que dejaste la última vez
+  const sp = withSavedPrefs(await searchParams, (await cookies()).get(PREF_COOKIES.calendar)?.value, ["ver", "cine"]);
   const { lang } = await getT();
   const supabase = await createClient();
   const {
