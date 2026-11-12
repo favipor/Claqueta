@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDiscover, getRelated, getTrending, type CatalogKind, type TmdbItem } from "@/lib/tmdb";
+import { getDiscover, getTrending, type CatalogKind, type TmdbItem } from "@/lib/tmdb";
 import { getT } from "@/lib/i18n-server";
 import { TitleCard } from "./TitleCard";
 import { Reveal } from "./Reveal";
@@ -10,6 +10,9 @@ import { InfiniteCatalog } from "./InfiniteCatalog";
 import { SearchBox } from "./SearchBox";
 import { BookmarkIcon, FilmIcon, TvIcon } from "./NavIcons";
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { computeRecs, likedTitles, RECS_COOKIE, type LikedTitle, type RecsResult } from "@/lib/recs";
+import { ForYouRow } from "./ForYouRow";
 
 function TrendingRow({ title, items }: { title: string; items: TmdbItem[] }) {
   if (items.length === 0) return null;
@@ -63,45 +66,17 @@ function HeroLink({
   );
 }
 
-// «Para ti»: títulos parecidos a los que mejor has puntuado y que aún no tienes en tu lista
-async function personalRecs(
+// «Para ti»: se abre con la base que elegiste la última vez (mezcla, un título o un género)
+async function forYou(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   kind: CatalogKind,
   lang: string
-): Promise<{ items: TmdbItem[]; because: string | null }> {
-  try {
-    let q = supabase
-      .from("user_titles")
-      .select("tmdb_id, media_type, title, rating")
-      .eq("user_id", userId)
-      .gte("rating", 7)
-      .order("rating", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(6);
-    if (kind !== "all") q = q.eq("media_type", kind);
-    const [{ data: top }, { data: mine }] = await Promise.all([
-      q,
-      supabase.from("user_titles").select("tmdb_id, media_type").eq("user_id", userId).limit(5000),
-    ]);
-    if (!top?.length) return { items: [], because: null };
-    const have = new Set((mine ?? []).map((m) => `${m.media_type}-${m.tmdb_id}`));
-    const lists = await Promise.all(top.map((t) => getRelated(t.media_type as "movie" | "tv", t.tmdb_id as number, lang).catch(() => [])));
-    const score = new Map<string, { item: TmdbItem; n: number }>();
-    lists.forEach((list, i) =>
-      list.forEach((it, pos) => {
-        const k = `${it.media_type}-${it.id}`;
-        if (have.has(k) || (kind !== "all" && it.media_type !== kind)) return;
-        const cur = score.get(k) ?? { item: it, n: 0 };
-        cur.n += (6 - i) + (20 - Math.min(pos, 19)) / 20; // pesa más lo que sale en varias y lo de tus mejores notas
-        score.set(k, cur);
-      })
-    );
-    const items = [...score.values()].sort((a, b) => b.n - a.n).map((x) => x.item).slice(0, 16);
-    return { items, because: top[0].title as string };
-  } catch {
-    return { items: [], because: null };
-  }
+): Promise<{ initial: RecsResult; liked: LikedTitle[] }> {
+  const saved = (await cookies()).get(`${RECS_COOKIE}_${kind}`)?.value ?? "mix";
+  const liked = await likedTitles(supabase, userId, kind);
+  const initial = await computeRecs(supabase, userId, kind, lang, saved, liked);
+  return { initial, liked };
 }
 
 // Vista compartida por la portada (películas y series), /peliculas y /series:
@@ -129,7 +104,7 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
           .maybeSingle()
           .then(({ data, error }) => (error ? null : ((data?.providers as number[] | null) ?? [])))
       : Promise.resolve(null),
-    user ? personalRecs(supabase, user.id, kind, lang) : Promise.resolve({ items: [] as TmdbItem[], because: null }),
+    user ? forYou(supabase, user.id, kind, lang) : Promise.resolve(null),
   ]);
 
   // Carátulas del fondo del banner: se mezclan varias listas para tener variedad
@@ -174,9 +149,7 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
         </section>
       </Reveal>
 
-      {recs.items.length > 0 && (
-        <TrendingRow title={`${t("recs.title")}${recs.because ? ` · ${t("recs.because")} ${recs.because}` : ""}`} items={recs.items} />
-      )}
+      {recs && (recs.liked.length > 0 || recs.initial.items.length > 0) && <ForYouRow kind={kind} initial={recs.initial} liked={recs.liked} />}
       <TrendingRow title={t("home.trendingToday")} items={day} />
       <TrendingRow title={t("home.trending")} items={week} />
 

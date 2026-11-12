@@ -631,6 +631,14 @@ const es = {
   "imp.fromLetterboxd": "Ajustes → Data → Export your data. Descomprime el .zip y sube watched.csv, ratings.csv, diary.csv o watchlist.csv.",
   "imp.fromImdb": "En tu lista de valoraciones (Your Ratings) o en tu Watchlist: menú ⋯ → Exportar. Sube el .csv.",
   "imp.fromTvtime": "Pide tus datos en TV Time (Ajustes → Privacidad → Descargar mis datos) y sube el .csv con tus series.",
+  "recs.basedOn": "Basado en",
+  "recs.mix": "Mezcla de tus favoritas",
+  "recs.byTitle": "Por un título que te gustó",
+  "recs.byGenre": "Por género",
+  "recs.surprise": "Sorpresa",
+  "recs.mixSub": "según tus mejores notas",
+  "recs.genreSub": "lo mejor de",
+  "recs.empty": "No hay nada nuevo por aquí: prueba otra opción o pulsa Sorpresa.",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1264,6 +1272,14 @@ const en: Record<keyof typeof es, string> = {
   "imp.fromLetterboxd": "Settings → Data → Export your data. Unzip it and upload watched.csv, ratings.csv, diary.csv or watchlist.csv.",
   "imp.fromImdb": "In Your Ratings or your Watchlist: ⋯ menu → Export. Upload the .csv.",
   "imp.fromTvtime": "Request your data in TV Time (Settings → Privacy → Download my data) and upload the .csv with your shows.",
+  "recs.basedOn": "Based on",
+  "recs.mix": "Mix of your favourites",
+  "recs.byTitle": "By a title you liked",
+  "recs.byGenre": "By genre",
+  "recs.surprise": "Surprise me",
+  "recs.mixSub": "based on your top ratings",
+  "recs.genreSub": "the best of",
+  "recs.empty": "Nothing new here — try another option or tap Surprise me.",
 };
 
 export type DictKey = keyof typeof es;

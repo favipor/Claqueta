@@ -13,7 +13,7 @@ export function FilterSelect({
   className = "",
 }: {
   label: string;
-  icon: "sort" | "genre";
+  icon: "sort" | "genre" | "spark";
   value: string;
   onChange: (v: string) => void;
   children: ReactNode;
@@ -27,6 +27,8 @@ export function FilterSelect({
       <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3 h-4 w-4 shrink-0 text-brand-fg" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {icon === "sort" ? (
           <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4" />
+        ) : icon === "spark" ? (
+          <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" />
         ) : (
           <>
             <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" />
