@@ -131,12 +131,12 @@ const es = {
   "admin.blocked": "Personas silenciadas",
   "admin.noBlocked": "Nadie está silenciado.",
   "admin.unblock": "Quitar silencio",
-  "imp.link": "Importar desde Excel",
-  "imp.title": "Importar desde Excel",
-  "imp.intro": "Sube tu Excel (columnas NOMBRE, TIPO, VISUALIZACION y NOTA) y lo pasamos a tu lista de Claqueta.",
-  "imp.choose": "Elige tu archivo .xlsx",
+  "imp.link": "Importar",
+  "imp.title": "Importar tu lista",
+  "imp.intro": "Trae lo que ya tienes en Letterboxd, IMDb, TV Time o en tu Excel (columnas NOMBRE, TIPO, VISUALIZACION y NOTA).",
+  "imp.choose": "Elige tu archivo (.xlsx o .csv)",
   "imp.parsing": "Leyendo el archivo…",
-  "imp.noSheet": "No he encontrado una hoja con la columna NOMBRE. Revisa el archivo.",
+  "imp.noSheet": "No he encontrado una columna con el nombre de los títulos (NOMBRE, Name o Title). Revisa el archivo.",
   "imp.rulesTitle": "Cómo se importa",
   "imp.rule1": "Se quitan asteriscos, años y marcas como «(serie)» antes de buscar en TMDB.",
   "imp.rule2": "Una serie «Visto» se marca entera, con todos sus capítulos emitidos.",
@@ -628,6 +628,9 @@ const es = {
   "invite.p3": "Mira qué ven tus amigos y recomendaos cosas",
   "invite.join": "Únete gratis",
   "invite.seeProfile": "Ver su perfil",
+  "imp.fromLetterboxd": "Ajustes → Data → Export your data. Descomprime el .zip y sube watched.csv, ratings.csv, diary.csv o watchlist.csv.",
+  "imp.fromImdb": "En tu lista de valoraciones (Your Ratings) o en tu Watchlist: menú ⋯ → Exportar. Sube el .csv.",
+  "imp.fromTvtime": "Pide tus datos en TV Time (Ajustes → Privacidad → Descargar mis datos) y sube el .csv con tus series.",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -761,7 +764,7 @@ const en: Record<keyof typeof es, string> = {
   "admin.blocked": "Muted people",
   "admin.noBlocked": "Nobody is muted.",
   "admin.unblock": "Unmute",
-  "imp.link": "Import from Excel",
+  "imp.link": "Import",
   "imp.title": "Import from Excel",
   "imp.intro": "Upload your Excel (columns NOMBRE, TIPO, VISUALIZACION and NOTA) and we'll move it into your Claqueta list.",
   "imp.choose": "Choose your .xlsx file",
@@ -1258,6 +1261,9 @@ const en: Record<keyof typeof es, string> = {
   "invite.p3": "See what your friends watch and recommend things",
   "invite.join": "Join for free",
   "invite.seeProfile": "See their profile",
+  "imp.fromLetterboxd": "Settings → Data → Export your data. Unzip it and upload watched.csv, ratings.csv, diary.csv or watchlist.csv.",
+  "imp.fromImdb": "In Your Ratings or your Watchlist: ⋯ menu → Export. Upload the .csv.",
+  "imp.fromTvtime": "Request your data in TV Time (Settings → Privacy → Download my data) and upload the .csv with your shows.",
 };
 
 export type DictKey = keyof typeof es;

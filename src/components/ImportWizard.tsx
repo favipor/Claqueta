@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import readXlsxFile, { readSheetNames } from "read-excel-file";
 import { importBatch, matchBatch } from "@/app/import-actions";
 import { img } from "@/lib/tmdb";
-import { parseTable } from "@/lib/import-parse";
+import { parseCsv, parseTable } from "@/lib/import-parse";
 import { groupItems } from "@/lib/import-group";
 import type { ImportRow, MatchQuery, MatchResult } from "@/lib/import-types";
 import { useI18n } from "./I18nProvider";
@@ -40,9 +40,12 @@ export function ImportWizard() {
 
     let parsed: ImportRow[] | null = null;
     try {
-      for (const sheet of await readSheetNames(file)) {
+      if (/\.(csv|txt)$/i.test(file.name)) {
+        const r = parseTable(parseCsv(await file.text()), file.name);
+        if (r && r.length > 0) parsed = r;
+      } else for (const sheet of await readSheetNames(file)) {
         const table = (await readXlsxFile(file, { sheet })) as unknown[][];
-        const r = parseTable(table);
+        const r = parseTable(table, file.name);
         if (r && r.length > 0) {
           parsed = r;
           break;
@@ -164,12 +167,12 @@ export function ImportWizard() {
             <span className="font-semibold">
               {stage === "parsing" ? t("imp.parsing") : t("imp.choose")}
             </span>
-            <span className="text-xs text-neutral-500">.xlsx</span>
+            <span className="text-xs text-neutral-500">.xlsx · .csv</span>
           </label>
           <input
             id="xlsx"
             type="file"
-            accept=".xlsx"
+            accept=".xlsx,.csv"
             onChange={onFile}
             disabled={stage === "parsing"}
             className="sr-only"
@@ -179,6 +182,21 @@ export function ImportWizard() {
               {error}
             </p>
           )}
+          {/* De dónde sacar el archivo en otras apps */}
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(
+              [
+                ["Letterboxd", "imp.fromLetterboxd"],
+                ["IMDb", "imp.fromImdb"],
+                ["TV Time", "imp.fromTvtime"],
+              ] as const
+            ).map(([name, key]) => (
+              <div key={name} className="rounded-xl bg-neutral-100 p-3 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                <p className="mb-1 text-sm font-bold text-neutral-900 dark:text-white">{name}</p>
+                {t(key)}
+              </div>
+            ))}
+          </div>
           <details className="text-sm text-neutral-600 dark:text-neutral-400">
             <summary className="cursor-pointer font-medium">{t("imp.rulesTitle")}</summary>
             <ul className="mt-2 list-disc space-y-1 pl-5">

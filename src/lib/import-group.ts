@@ -33,6 +33,7 @@ export function groupItems(
         rating: null,
         seasons: {},
         ratings: [],
+        watched_on: null,
       };
       map.set(key, it);
     }
@@ -45,6 +46,7 @@ export function groupItems(
       it.status = best(it.status, row.status);
     }
     if (row.rating !== null) it.ratings.push(row.rating);
+    if (row.watchedOn && (!it.watched_on || row.watchedOn > it.watched_on)) it.watched_on = row.watchedOn;
   }
 
   return [...map.values()].map(({ ratings, ...item }) => ({

@@ -13,6 +13,7 @@ export type ImportRow = {
   season: number | null; // número de temporada si el nombre acababa en T1, T2…
   status: Status;
   rating: number | null;
+  watchedOn: string | null; // fecha en que se vio (AAAA-MM-DD), si el archivo la trae
 };
 
 export type MatchQuery = {
@@ -47,6 +48,7 @@ export type ImportItem = {
   status: Status | null; // película: su estado. Serie: estado de la fila sin temporada
   rating: number | null;
   seasons: Record<number, SeasonStatus>; // series: estado de las filas con T1, T2…
+  watched_on?: string | null; // la fecha más reciente en que se vio
 };
 
 export type ImportBatchResult = {

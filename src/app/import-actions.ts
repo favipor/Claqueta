@@ -72,6 +72,7 @@ function validate(it: ImportItem): ImportItem | null {
     status: it.status,
     rating: it.rating,
     seasons,
+    watched_on: typeof it.watched_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(it.watched_on) ? it.watched_on : null,
   };
 }
 
@@ -102,6 +103,7 @@ async function importOne(
     title: it.title,
     poster_path: it.poster_path,
     ...(it.rating !== null ? { rating: it.rating } : {}),
+    ...(it.watched_on ? { watched_on: it.watched_on } : {}),
     ...(meta ? { runtime_min: meta.runtime_min, genres: meta.genres } : {}),
   };
 
