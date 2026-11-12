@@ -87,6 +87,8 @@ export function TrackPanel({
 
   return (
     <section className="space-y-5 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+      {/* Estado y nota en la misma fila (una debajo de otra en el móvil) */}
+      <div className="grid gap-5 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-8">
       <div>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-neutral-500">
           {t("detail.myStatus")}
@@ -108,6 +110,21 @@ export function TrackPanel({
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <h2 className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          {t("detail.myRating")}
+        </h2>
+        <StarRating
+          value={rating}
+          onChange={(v) => {
+            setRating(v);
+            save({ rating: v });
+          }}
+        />
+      </div>
+
       </div>
 
       {(status === "visto" || status === "volver_a_ver") && (
@@ -144,19 +161,6 @@ export function TrackPanel({
           <p className="mt-1 text-xs text-neutral-500">{t("diary.hint")}</p>
         </div>
       )}
-
-      <div>
-        <h2 className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          {t("detail.myRating")}
-        </h2>
-        <StarRating
-          value={rating}
-          onChange={(v) => {
-            setRating(v);
-            save({ rating: v });
-          }}
-        />
-      </div>
 
       <div>
         <label htmlFor="note" className="mb-1 block text-sm font-semibold uppercase tracking-wide text-neutral-500">

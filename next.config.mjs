@@ -17,6 +17,9 @@ const nextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   images: {
+    // Sin el optimizador de Vercel: su cupo gratuito se agota (error 402 y carátulas en blanco).
+    // TMDB ya sirve cada imagen en el tamaño justo (w92, w185, w342, w500, w1280).
+    unoptimized: true,
     remotePatterns: [{ protocol: "https", hostname: "image.tmdb.org" }],
   },
 };
