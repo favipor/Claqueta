@@ -20,6 +20,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Enlace de «recuperar contraseña» que llega a otra página: se lleva a /restablecer
+  const sp = request.nextUrl.searchParams;
+  if (sp.get("token_hash") && sp.get("type") === "recovery" && request.nextUrl.pathname !== "/restablecer") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/restablecer";
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
   const remember = request.cookies.get(REMEMBER_COOKIE)?.value !== "0";
 
