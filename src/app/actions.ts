@@ -15,6 +15,7 @@ type EntryInput = {
     status?: string | null;
     rating?: number | null;
     private_note?: string | null;
+    watched_on?: string | null; // fecha en que lo viste (AAAA-MM-DD)
   };
 };
 
@@ -52,6 +53,23 @@ export async function updateEntry(input: EntryInput): Promise<{ ok: boolean }> {
   if ("private_note" in patch) {
     const note = (patch.private_note ?? "").slice(0, 5000);
     row.private_note = note.trim() === "" ? null : note;
+  }
+
+  // Diario: fecha en que lo viste. Al marcar Visto / Volver a ver sin fecha, se pone la de hoy.
+  if ("watched_on" in patch) {
+    const d = patch.watched_on;
+    if (d !== null && d !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return { ok: false };
+    if (d && (d > new Date(Date.now() + 86400000).toISOString().slice(0, 10) || d < "1900-01-01")) return { ok: false };
+    row.watched_on = d ?? null;
+  } else if ("status" in patch && (patch.status === "visto" || patch.status === "volver_a_ver")) {
+    const { data: cur } = await supabase
+      .from("user_titles")
+      .select("watched_on")
+      .eq("user_id", user.id)
+      .eq("tmdb_id", tmdb_id)
+      .eq("media_type", media_type)
+      .maybeSingle();
+    if (!cur?.watched_on) row.watched_on = new Date().toISOString().slice(0, 10);
   }
 
   // Al marcar un estado se guardan también la duración y los géneros (estadísticas del perfil).

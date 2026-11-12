@@ -8,7 +8,7 @@ import type { MediaType } from "@/lib/tmdb";
 import { StarRating } from "./StarRating";
 import { useI18n } from "./I18nProvider";
 
-type Initial = { status: Status | null; rating: number | null; private_note: string | null };
+type Initial = { status: Status | null; rating: number | null; private_note: string | null; watched_on?: string | null };
 
 
 const activeColor: Record<Status, string> = {
@@ -42,6 +42,8 @@ export function TrackPanel({
   const status = controlled ? statusProp ?? null : localStatus;
   const [rating, setRating] = useState<number | null>(initial.rating);
   const [note, setNote] = useState(initial.private_note ?? "");
+  const today = new Date().toISOString().slice(0, 10);
+  const [watchedOn, setWatchedOn] = useState<string | null>(initial.watched_on ?? null);
   const [pending, startTransition] = useTransition();
   const [noteState, setNoteState] = useState<"idle" | "saving" | "saved">("idle");
 
@@ -71,6 +73,7 @@ export function TrackPanel({
       return;
     }
     setLocalStatus(next);
+    if ((next === "visto" || next === "volver_a_ver") && !watchedOn) setWatchedOn(today);
     save({ status: next });
   }
 
@@ -106,6 +109,41 @@ export function TrackPanel({
           ))}
         </div>
       </div>
+
+      {(status === "visto" || status === "volver_a_ver") && (
+        <div>
+          <label htmlFor="watched-on" className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">
+            📅 {t("diary.watchedOn")}
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id="watched-on"
+              type="date"
+              max={today}
+              value={watchedOn ?? ""}
+              onChange={(e) => {
+                const v = e.target.value || null;
+                setWatchedOn(v);
+                save({ watched_on: v });
+              }}
+              className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-950 dark:[color-scheme:dark]"
+            />
+            {watchedOn !== today && (
+              <button
+                type="button"
+                onClick={() => {
+                  setWatchedOn(today);
+                  save({ watched_on: today });
+                }}
+                className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-semibold hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+              >
+                {t("diary.today")}
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-neutral-500">{t("diary.hint")}</p>
+        </div>
+      )}
 
       <div>
         <h2 className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">

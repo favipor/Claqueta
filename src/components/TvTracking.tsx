@@ -16,7 +16,7 @@ import { SeasonsTracker } from "./SeasonsTracker";
 import { useI18n } from "./I18nProvider";
 import { reloadMyTitles } from "./MyTitles";
 
-type Initial = { status: Status | null; rating: number | null; private_note: string | null };
+type Initial = { status: Status | null; rating: number | null; private_note: string | null; watched_on?: string | null };
 
 // Une el panel de seguimiento de la serie con el de temporadas/capítulos.
 // Las acciones se ejecutan una detrás de otra para que las reglas automáticas no se pisen.

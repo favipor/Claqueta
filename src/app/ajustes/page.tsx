@@ -6,6 +6,7 @@ import { SettingsForm } from "@/components/SettingsForm";
 import { ProvidersPicker } from "@/components/ProvidersPicker";
 import { PushToggle } from "@/components/PushToggle";
 import { DeleteAccount } from "@/components/DeleteAccount";
+import { ActivityToggle } from "@/components/ActivityToggle";
 import { getProviders } from "@/lib/tmdb";
 import { getT } from "@/lib/i18n-server";
 
@@ -38,7 +39,7 @@ export default async function SettingsPage() {
   const { lang } = await getT();
   const [allProviders, { data: provRow, error: provErr }] = await Promise.all([
     getProviders(lang).catch(() => []),
-    supabase.from("profiles").select("providers").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("providers, share_activity").eq("id", user.id).maybeSingle(),
   ]);
 
   return (
@@ -55,6 +56,7 @@ export default async function SettingsPage() {
       cooldownUntil={until ? until.toISOString() : null}
     />
     <PushToggle />
+    {!provErr && <ActivityToggle initial={(provRow as { share_activity?: boolean } | null)?.share_activity ?? true} />}
     {!provErr && allProviders.length > 0 && (
       <ProvidersPicker providers={allProviders} initial={((provRow?.providers as number[] | null) ?? [])} />
     )}

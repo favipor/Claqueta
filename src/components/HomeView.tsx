@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDiscover, getTrending, type CatalogKind, type TmdbItem } from "@/lib/tmdb";
+import { getDiscover, getRelated, getTrending, type CatalogKind, type TmdbItem } from "@/lib/tmdb";
 import { getT } from "@/lib/i18n-server";
 import { TitleCard } from "./TitleCard";
 import { Reveal } from "./Reveal";
@@ -63,6 +63,47 @@ function HeroLink({
   );
 }
 
+// «Para ti»: títulos parecidos a los que mejor has puntuado y que aún no tienes en tu lista
+async function personalRecs(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  kind: CatalogKind,
+  lang: string
+): Promise<{ items: TmdbItem[]; because: string | null }> {
+  try {
+    let q = supabase
+      .from("user_titles")
+      .select("tmdb_id, media_type, title, rating")
+      .eq("user_id", userId)
+      .gte("rating", 7)
+      .order("rating", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(6);
+    if (kind !== "all") q = q.eq("media_type", kind);
+    const [{ data: top }, { data: mine }] = await Promise.all([
+      q,
+      supabase.from("user_titles").select("tmdb_id, media_type").eq("user_id", userId).limit(5000),
+    ]);
+    if (!top?.length) return { items: [], because: null };
+    const have = new Set((mine ?? []).map((m) => `${m.media_type}-${m.tmdb_id}`));
+    const lists = await Promise.all(top.map((t) => getRelated(t.media_type as "movie" | "tv", t.tmdb_id as number, lang).catch(() => [])));
+    const score = new Map<string, { item: TmdbItem; n: number }>();
+    lists.forEach((list, i) =>
+      list.forEach((it, pos) => {
+        const k = `${it.media_type}-${it.id}`;
+        if (have.has(k) || (kind !== "all" && it.media_type !== kind)) return;
+        const cur = score.get(k) ?? { item: it, n: 0 };
+        cur.n += (6 - i) + (20 - Math.min(pos, 19)) / 20; // pesa más lo que sale en varias y lo de tus mejores notas
+        score.set(k, cur);
+      })
+    );
+    const items = [...score.values()].sort((a, b) => b.n - a.n).map((x) => x.item).slice(0, 16);
+    return { items, because: top[0].title as string };
+  } catch {
+    return { items: [], because: null };
+  }
+}
+
 // Vista compartida por la portada (películas y series), /peliculas y /series:
 // banner + Tendencias de hoy + Tendencias de la semana + catálogo completo.
 export async function HomeView({ kind }: { kind: CatalogKind }) {
@@ -75,7 +116,7 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
   } = await supabase.auth.getUser();
   const loggedIn = !!user;
 
-  const [week, day, first, myProviders] = await Promise.all([
+  const [week, day, first, myProviders, recs] = await Promise.all([
     getTrending(lang, "week", kind).catch(() => noItems),
     getTrending(lang, "day", kind).catch(() => noItems),
     getDiscover(kind, "popularity", 1, lang).catch(() => ({ items: noItems, totalPages: 1 })),
@@ -88,6 +129,7 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
           .maybeSingle()
           .then(({ data, error }) => (error ? null : ((data?.providers as number[] | null) ?? [])))
       : Promise.resolve(null),
+    user ? personalRecs(supabase, user.id, kind, lang) : Promise.resolve({ items: [] as TmdbItem[], because: null }),
   ]);
 
   // Carátulas del fondo del banner: se mezclan varias listas para tener variedad
@@ -132,6 +174,9 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
         </section>
       </Reveal>
 
+      {recs.items.length > 0 && (
+        <TrendingRow title={`${t("recs.title")}${recs.because ? ` · ${t("recs.because")} ${recs.because}` : ""}`} items={recs.items} />
+      )}
       <TrendingRow title={t("home.trendingToday")} items={day} />
       <TrendingRow title={t("home.trending")} items={week} />
 

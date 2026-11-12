@@ -108,11 +108,14 @@ export function NavbarClient({ account }: { account: Account | null }) {
     ...(userName
       ? [
           { href: "/mi-lista", label: t("nav.myList"), Icon: BookmarkIcon },
-          { href: "/descubrir", label: t("nav.discover"), Icon: UsersIcon },
+          { href: "/calendario", label: t("nav.calendar"), Icon: CalendarIcon },
+          { href: "/actividad", label: t("nav.friends"), Icon: UsersIcon },
         ]
       : []),
-    { href: "/guia", label: t("nav.guide"), Icon: BookIcon },
+    ...(userName ? [] : [{ href: "/guia", label: t("nav.guide"), Icon: BookIcon }]),
   ];
+  // «Amigos» queda marcado también en Descubrir gente
+  const isActive = (href: string) => pathname === href || (href === "/actividad" && pathname === "/descubrir");
 
   const searchClass =
     "w-full rounded-full border border-neutral-300 bg-neutral-100 px-4 py-1.5 text-sm outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900";
@@ -163,7 +166,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
           {/* Pastilla de navegación: el resaltado teal se desliza hasta la sección activa */}
           <div className="mr-1 hidden items-center gap-0.5 rounded-full bg-neutral-200/70 p-1 lg:flex dark:bg-neutral-800/80">
             {links.map(({ href, label, Icon }) => {
-              const active = pathname === href;
+              const active = isActive(href);
               return (
                 <Link
                   key={href}
@@ -248,6 +251,16 @@ export function NavbarClient({ account }: { account: Account | null }) {
                         </Link>
                       )}
                       {account.username && (
+                        <Link role="menuitem" href={`/invitar/${account.username}`} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
+                          <span aria-hidden="true" className="w-4 text-center">💌</span>
+                          {t("invite.menu")}
+                        </Link>
+                      )}
+                      <Link role="menuitem" href="/guia" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
+                        <BookIcon className="h-4 w-4" />
+                        {t("nav.guide")}
+                      </Link>
+                      {account.username && (
                         <Link role="menuitem" href="/ajustes" className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
                           <GearIcon className="h-4 w-4" />
                           {t("nav.settings")}
@@ -312,7 +325,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
       {open && (
         <div id="mobile-menu" className="mx-auto mt-2 max-w-6xl space-y-1 border-t border-neutral-200 px-4 pt-3 lg:hidden dark:border-neutral-800">
           {links.map(({ href, label, Icon }) => {
-            const active = pathname === href;
+            const active = isActive(href);
             return (
               <Link
                 key={href}
@@ -381,6 +394,15 @@ function SparkIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z" />
       <path d="M19 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
     </svg>
   );
 }

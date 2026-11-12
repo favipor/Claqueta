@@ -501,3 +501,71 @@ export async function getRelated(type: MediaType, id: number, lang: string): Pro
     return [];
   }
 }
+
+// ---------- Calendario de estrenos ----------
+export type AirItem = {
+  date: string; // AAAA-MM-DD
+  tmdb_id: number;
+  media_type: MediaType;
+  title: string;
+  poster_path: string | null;
+  label: string; // «T2 · E5 · Nombre» o «Estreno en cines»
+};
+
+// Fechas de estreno de una serie (capítulos de la temporada en emisión y la siguiente) o de una película,
+// filtradas entre «from» y «to» (incluidas).
+export async function getAirSchedule(type: MediaType, id: number, lang: string, from: string, to: string): Promise<AirItem[]> {
+  try {
+    const d: any = await tmdb(`/${type}/${id}`, lang);
+    const title: string = (type === "movie" ? d.title : d.name) ?? "";
+    const poster_path: string | null = d.poster_path ?? null;
+    if (type === "movie") {
+      const date: string | undefined = d.release_date;
+      return date && date >= from && date <= to
+        ? [{ date, tmdb_id: id, media_type: type, title, poster_path, label: lang === "en" ? "Release" : "Estreno" }]
+        : [];
+    }
+    const seasons = new Set<number>();
+    for (const e of [d.last_episode_to_air, d.next_episode_to_air]) if (e?.season_number) seasons.add(e.season_number);
+    const out: AirItem[] = [];
+    for (const sn of seasons) {
+      const eps = await getSeasonEpisodes(id, sn, lang).catch(() => []);
+      for (const e of eps) {
+        if (e.air_date && e.air_date >= from && e.air_date <= to) {
+          out.push({
+            date: e.air_date,
+            tmdb_id: id,
+            media_type: "tv",
+            title,
+            poster_path,
+            label: `T${sn} · E${e.episode_number}${e.name && !/^(episodio|episode)\s*\d+$/i.test(e.name) ? ` · ${e.name}` : ""}`,
+          });
+        }
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+// Próximos estrenos de cine en España (para quien quiera verlos en el calendario)
+export async function getUpcomingMovies(lang: string, from: string, to: string): Promise<AirItem[]> {
+  try {
+    const pages = await Promise.all([1, 2].map((page) => tmdb("/movie/upcoming", lang, { region: "ES", page: String(page) })));
+    const seen = new Set<number>();
+    return pages
+      .flatMap((p: any) => p.results ?? [])
+      .filter((r: any) => r.release_date && r.release_date >= from && r.release_date <= to && r.poster_path && !seen.has(r.id) && seen.add(r.id))
+      .map((r: any) => ({
+        date: r.release_date,
+        tmdb_id: r.id,
+        media_type: "movie" as const,
+        title: r.title,
+        poster_path: r.poster_path,
+        label: lang === "en" ? "In theaters" : "En cines",
+      }));
+  } catch {
+    return [];
+  }
+}

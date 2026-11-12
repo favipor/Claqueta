@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { usernameProblem } from "@/lib/profile";
+import { cookies } from "next/headers";
 
 async function getUser() {
   const supabase = await createClient();
@@ -67,6 +68,19 @@ export async function completeOnboarding(input: {
 
   if (error) return { ok: false, error: error.code === "23505" ? "taken" : "db" };
   if (!data) return { ok: false, error: "db" };
+
+  // Si llegó con un enlace de invitación, empieza siguiendo a quien le invitó
+  try {
+    const store = await cookies();
+    const ref = store.get("claq_ref")?.value?.toLowerCase();
+    if (ref && /^[a-z0-9_]{3,20}$/.test(ref) && ref !== data.username) {
+      const { data: inviter } = await supabase.from("profiles").select("id").eq("username", ref).maybeSingle();
+      if (inviter?.id) await supabase.from("follows").insert({ follower_id: user.id, following_id: inviter.id });
+    }
+    store.delete("claq_ref");
+  } catch {
+    // la invitación es opcional: si falla, el registro sigue igual
+  }
 
   revalidatePath("/", "layout");
   return { ok: true, username: data.username as string };
@@ -262,3 +276,33 @@ export async function deleteMyAccount(confirmUsername: string): Promise<{ ok: bo
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+// Ajustes → «Mostrar mi actividad a quien me sigue»
+export async function setShareActivity(on: boolean): Promise<{ ok: boolean }> {
+  const { supabase, user } = await getUser();
+  if (!user) return { ok: false };
+  const { error } = await supabase.from("profiles").update({ share_activity: !!on }).eq("id", user.id);
+  return { ok: !error };
+}
+
+// «Ver más» en Actividad
+export async function loadActivity(before: string | null) {
+  const { supabase, user } = await getUser();
+  if (!user) return [];
+  const { data } = await supabase.rpc("friends_activity", { p_limit: 30, p_before: before });
+  return (data ?? []) as ActivityRow[];
+}
+
+export type ActivityRow = {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  tmdb_id: number;
+  media_type: "movie" | "tv";
+  title: string;
+  poster_path: string | null;
+  status: string | null;
+  rating: number | null;
+  at: string;
+};

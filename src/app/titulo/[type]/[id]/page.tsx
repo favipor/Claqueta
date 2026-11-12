@@ -75,10 +75,11 @@ export default async function TitlePage({ params }: Props) {
   if (!d) notFound();
   const user = authRes.data.user;
 
-  let initial: { status: Status | null; rating: number | null; private_note: string | null } = {
+  let initial: { status: Status | null; rating: number | null; private_note: string | null; watched_on?: string | null } = {
     status: null,
     rating: null,
     private_note: null,
+    watched_on: null,
   };
   let community: { average: number | null; votes: number } = { average: null, votes: 0 };
   // Series: temporadas de TMDB + lo que el usuario lleva visto.
@@ -89,7 +90,7 @@ export default async function TitlePage({ params }: Props) {
     const [mineRes, commRes, tvRes, profRes, blockRes, adminRes] = await Promise.all([
       supabase
         .from("user_titles")
-        .select("status, rating, private_note")
+        .select("status, rating, private_note, watched_on")
         .eq("user_id", user.id)
         .eq("tmdb_id", p.id)
         .eq("media_type", p.type)
@@ -110,6 +111,7 @@ export default async function TitlePage({ params }: Props) {
         status: mine.status as Status | null,
         rating: mine.rating === null ? null : Number(mine.rating),
         private_note: mine.private_note,
+        watched_on: (mine as { watched_on?: string | null }).watched_on ?? null,
       };
     }
     const comm = commRes.data;
