@@ -112,7 +112,7 @@ export function TrackPanel({
         </div>
       </div>
 
-      <div>
+      <div className="lg:justify-self-end">
         <h2 className="mb-2 block text-sm font-semibold uppercase tracking-wide text-neutral-500">
           {t("detail.myRating")}
         </h2>
