@@ -252,7 +252,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
                       )}
                       {account.username && (
                         <Link role="menuitem" href={`/invitar/${account.username}`} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-neutral-800 transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:text-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800">
-                          <span aria-hidden="true" className="w-4 text-center">💌</span>
+                          <UserPlusIcon className="h-4 w-4" />
                           {t("invite.menu")}
                         </Link>
                       )}
@@ -403,6 +403,15 @@ function CalendarIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  );
+}
+
+function UserPlusIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21c0-4 3.1-6.5 7-6.5s7 2.5 7 6.5M19 8v6M16 11h6" />
     </svg>
   );
 }

@@ -42,7 +42,11 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
               href={`/invitar/${myUsername}`}
               className="rounded-full border border-neutral-300 px-5 py-2 text-sm font-bold hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
             >
-              💌 {t("invite.menu")}
+              <svg viewBox="0 0 24 24" className="mr-1.5 inline h-4 w-4 align-[-3px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="9" cy="8" r="4" />
+                <path d="M2 21c0-4 3.1-6.5 7-6.5s7 2.5 7 6.5M19 8v6M16 11h6" />
+              </svg>
+              {t("invite.menu")}
             </Link>
           )}
         </div>
