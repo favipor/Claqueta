@@ -29,6 +29,11 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
   },
   twitter: { card: "summary_large_image" },
+  keywords: ["películas", "series", "seguimiento", "qué ver", "lista de pelis", "red social de cine", "Claqueta", "miclaqueta"],
+  // Código de Google Search Console (se pone en Vercel como NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION)
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {}),
   applicationName: "Claqueta",
   appleWebApp: { capable: true, title: "Claqueta", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
@@ -52,6 +57,35 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={lang} className={lexend.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Datos para Google: nombre del sitio, logo y buscador (puede mostrar la caja de búsqueda en los resultados) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: "Claqueta",
+                alternateName: ["miclaqueta", "Mi Claqueta", "miclaqueta.com"],
+                url: `${SITE_URL}/`,
+                inLanguage: "es",
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/buscar?q={search_term_string}` },
+                  "query-input": "required name=search_term_string",
+                },
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "Claqueta",
+                url: `${SITE_URL}/`,
+                logo: `${SITE_URL}/icons/icon-512.png`,
+                email: "claqueta.contacto@gmail.com",
+              },
+            ]),
+          }}
+        />
       </head>
       <body className="flex min-h-screen flex-col overflow-x-clip">
         <I18nProvider lang={lang}>

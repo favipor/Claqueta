@@ -14,7 +14,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/privacidad`, changeFrequency: "yearly", priority: 0.1 },
     { url: `${SITE_URL}/cookies`, changeFrequency: "yearly", priority: 0.1 },
   ];
-  const trending = await getTrending("es", "week", "all").catch(() => []);
+  // Títulos en tendencia (semana y día, películas y series), sin repetir
+  const lists = await Promise.all([
+    getTrending("es", "week", "movie").catch(() => []),
+    getTrending("es", "week", "tv").catch(() => []),
+    getTrending("es", "day", "all").catch(() => []),
+  ]);
+  const seen = new Set<string>();
+  const trending = lists.flat().filter((t) => {
+    const k = `${t.media_type}-${t.id}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
   const titles: MetadataRoute.Sitemap = trending.map((t) => ({
     url: `${SITE_URL}/titulo/${t.media_type}/${t.id}`,
     lastModified: now,
