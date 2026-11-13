@@ -90,7 +90,7 @@ export function AdminAnalytics({ data, errors }: { data: Analytics | null; error
           {data.top.length > 0 && (
             <div className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
               <h3 className="mb-3 font-bold">{t("admin.topPages")}</h3>
-              <ol className="space-y-2">
+              <ol className="max-h-80 space-y-2 overflow-y-auto overscroll-contain pr-1">
                 {data.top.map((p) => {
                   const max = Number(data.top[0].views) || 1;
                   return (
@@ -133,17 +133,17 @@ export function AdminAnalytics({ data, errors }: { data: Analytics | null; error
               ✅ {t("admin.noErrors")}
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="max-h-[65dvh] overflow-y-auto overscroll-contain pr-1 space-y-2">
               {errors.map((e) => (
-                <li key={e.id} className="rounded-2xl border border-neutral-200 bg-white p-4 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+                <li key={e.id} className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 text-sm dark:border-neutral-800 dark:bg-neutral-900">
                   <button type="button" onClick={() => setOpen(open === e.id ? null : e.id)} className="w-full text-left">
-                    <p className="font-semibold text-red-600 dark:text-red-400">{e.message}</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">
+                    <p className="font-semibold text-red-600 [overflow-wrap:anywhere] dark:text-red-400">{e.message}</p>
+                    <p className="mt-0.5 text-xs text-neutral-500 [overflow-wrap:anywhere]">
                       {new Date(e.created_at).toLocaleString(lang === "en" ? "en-GB" : "es-ES")} · {e.path ?? "?"}
                     </p>
                   </button>
                   {open === e.id && (
-                    <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg bg-neutral-100 p-3 text-[11px] dark:bg-neutral-800">
+                    <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg [overflow-wrap:anywhere] bg-neutral-100 p-3 text-[11px] dark:bg-neutral-800">
                       {e.stack ?? ""}
                       {e.user_agent ? `\n\n${e.user_agent}` : ""}
                     </pre>

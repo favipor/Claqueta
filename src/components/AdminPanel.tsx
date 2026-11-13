@@ -68,7 +68,7 @@ export function AdminPanel({
         {reportList.length === 0 ? (
           <p className="text-sm text-neutral-500">{t("admin.noReports")}</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="max-h-[65dvh] overflow-y-auto overscroll-contain pr-1 space-y-3">
             {reportList.map((r) => (
               <li key={r.comment_id} className={`${card} space-y-3`}>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
@@ -137,7 +137,7 @@ export function AdminPanel({
         {blockedList.length === 0 ? (
           <p className="text-sm text-neutral-500">{t("admin.noBlocked")}</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="max-h-[65dvh] overflow-y-auto overscroll-contain pr-1 space-y-2">
             {blockedList.map((b) => (
               <li key={b.user_id} className={`${card} flex items-center justify-between gap-3`}>
                 <span className="text-sm font-medium">

@@ -186,7 +186,7 @@ export function SearchBox({
       </form>
       {showList && (
         <div
-          className={`absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-neutral-200 bg-white py-2 text-left text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 ${
+          className={`absolute left-0 right-0 top-full z-50 mt-2 max-h-[min(70vh,calc(100svh-9rem))] overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white py-2 text-left text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 ${
             dark ? "ring-1 ring-black/10" : ""
           }`}
         >

@@ -16,6 +16,7 @@ export function RecommendButton({ meta }: { meta: Meta }) {
   const [friends, setFriends] = useState<Friend[] | null>(null);
   const [picked, setPicked] = useState<Friend | null>(null);
   const [note, setNote] = useState("");
+  const [q, setQ] = useState("");
   const [error, setError] = useState<DmError | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [busy, start] = useTransition();
@@ -62,8 +63,14 @@ export function RecommendButton({ meta }: { meta: Meta }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 z-30 mt-2 w-80 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-sm font-bold">{t("rec.title")}</p>
+        <>
+        {/* En el móvil: panel que sube desde abajo, con fondo oscuro para cerrarlo */}
+        <div className="fixed inset-0 z-[94] bg-black/40 sm:hidden" onClick={() => setOpen(false)} aria-hidden="true" />
+        <div role="dialog" aria-modal="false" className="fixed inset-x-3 bottom-3 z-[95] max-h-[80dvh] space-y-3 overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white p-4 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:z-30 sm:mt-2 sm:max-h-[70vh] sm:w-80 sm:shadow-xl">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold">{t("rec.title")}</p>
+            <button type="button" onClick={() => setOpen(false)} aria-label={t("a11y.close")} className="grid h-8 w-8 place-items-center rounded-full text-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 sm:hidden">×</button>
+          </div>
           {sentTo && (
             <p role="status" className="text-sm text-emerald-600 dark:text-emerald-400">
               {t("rec.sent")} {sentTo} ✓
@@ -74,8 +81,21 @@ export function RecommendButton({ meta }: { meta: Meta }) {
           ) : friends.length === 0 ? (
             <p className="text-sm text-neutral-500">{t("rec.none")}</p>
           ) : (
-            <ul className="max-h-48 space-y-1 overflow-y-auto">
-              {friends.map((f) => (
+            <>
+            {friends.length > 6 && (
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("rec.search")}
+                aria-label={t("rec.search")}
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-950"
+              />
+            )}
+            <ul className="max-h-[min(14rem,35dvh)] space-y-1 overflow-y-auto overscroll-contain pr-1">
+              {friends
+                .filter((f) => !q.trim() || `${f.display_name ?? ""} ${f.username}`.toLowerCase().includes(q.trim().toLowerCase()))
+                .map((f) => (
                 <li key={f.id}>
                   <button
                     type="button"
@@ -94,6 +114,7 @@ export function RecommendButton({ meta }: { meta: Meta }) {
                 </li>
               ))}
             </ul>
+            </>
           )}
           {picked && (
             <>
@@ -135,6 +156,7 @@ export function RecommendButton({ meta }: { meta: Meta }) {
             </p>
           )}
         </div>
+        </>
       )}
     </div>
   );

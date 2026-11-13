@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Reactions, type ReactionSummary } from "./Reactions";
 import { loadActivity, type ActivityRow } from "@/app/profile-actions";
@@ -57,6 +57,25 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
     })();
   }, [rows]);
 
+  // Más entradas al llegar al final del recuadro (con su propio scroll)
+  const boxRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const loadMore = useCallback(() => {
+    if (done || pending) return;
+    start(async () => {
+      const more = await loadActivity(rows.at(-1)?.at ?? null);
+      setRows((r) => [...r, ...more]);
+      if (more.length < 30) setDone(true);
+    });
+  }, [done, pending, rows]);
+  useEffect(() => {
+    const end = endRef.current;
+    if (!end || done) return;
+    const io = new IntersectionObserver((e) => e[0].isIntersecting && loadMore(), { root: boxRef.current, rootMargin: "200px" });
+    io.observe(end);
+    return () => io.disconnect();
+  }, [loadMore, done]);
+
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-700">
@@ -87,7 +106,10 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
   }
 
   return (
-    <div className="space-y-3">
+    <div
+      ref={boxRef}
+      className="max-h-[calc(100dvh-13rem)] min-h-[16rem] overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/40 sm:p-3"
+    >
       <ul className="space-y-2">
         {rows.map((r) => {
           const name = r.display_name ?? `@${r.username}`;
@@ -139,24 +161,10 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
           );
         })}
       </ul>
-      {!done && (
-        <div className="text-center">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              start(async () => {
-                const more = await loadActivity(rows.at(-1)?.at ?? null);
-                setRows((r) => [...r, ...more]);
-                if (more.length < 30) setDone(true);
-              })
-            }
-            className="rounded-full border border-neutral-300 px-6 py-2 text-sm font-semibold hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-700 dark:hover:bg-neutral-800"
-          >
-            {pending ? t("catalog.loading") : t("catalog.more")}
-          </button>
-        </div>
-      )}
+      <div ref={endRef} className="flex justify-center py-3" aria-live="polite">
+        {pending && <span className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-brand" aria-label={t("catalog.loading")} />}
+        {done && rows.length > 8 && <span className="text-xs text-neutral-400">· · ·</span>}
+      </div>
     </div>
   );
 }

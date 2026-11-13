@@ -4,15 +4,26 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { ClapperIcon } from "@/components/ClapperIcon";
-import { reportError } from "@/components/Telemetry";
+import { isChunkError, recoverFromChunkError, reportError } from "@/components/Telemetry";
 
 // Si algo falla al cargar una página se muestra esto en lugar de la pantalla de error genérica
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const { t } = useI18n();
+  const chunk = isChunkError(error.message);
   useEffect(() => {
+    // Versión nueva publicada mientras tenías la web abierta: se recarga sola en vez de mostrar un error
+    if (chunk && recoverFromChunkError()) return;
     console.error(error);
     reportError(error.message || "Error al cargar la página", error.stack, error.digest);
-  }, [error]);
+  }, [error, chunk]);
+
+  if (chunk) {
+    return (
+      <div className="flex justify-center py-24" aria-busy="true">
+        <span className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-brand dark:border-neutral-700" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center py-20 text-center">

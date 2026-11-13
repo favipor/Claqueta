@@ -156,7 +156,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, Props>(function M
       {open && (
         <ul
           role="listbox"
-          className="absolute left-0 top-full z-30 mt-1 w-full max-w-xs overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute left-0 top-full z-30 mt-1 max-h-60 w-full max-w-xs overflow-y-auto overscroll-contain rounded-xl border border-neutral-200 bg-white py-1 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900"
         >
           {matches.map((f, i) => (
             <li key={f.username} role="option" aria-selected={i === active}>

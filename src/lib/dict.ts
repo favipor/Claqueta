@@ -696,6 +696,7 @@ const es = {
   "together.noFriends": "Necesitas amigos que te sigan y a los que sigas para usar esto.",
   "notif.reaction": "ha reaccionado a lo que has marcado de",
   "react.add": "Reaccionar",
+  "rec.search": "Buscar amigo…",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1394,6 +1395,7 @@ const en: Record<keyof typeof es, string> = {
   "together.noFriends": "You need friends who follow you back to use this.",
   "notif.reaction": "reacted to your activity on",
   "react.add": "React",
+  "rec.search": "Search friend…",
 };
 
 export type DictKey = keyof typeof es;

@@ -67,8 +67,14 @@ export function AddToList({ meta }: { meta: Meta }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 z-30 mt-2 w-72 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-sm font-bold">{t("lists.addTitle")}</p>
+        <>
+        {/* En el móvil: panel que sube desde abajo, con fondo oscuro para cerrarlo */}
+        <div className="fixed inset-0 z-[94] bg-black/40 sm:hidden" onClick={() => setOpen(false)} aria-hidden="true" />
+        <div role="dialog" aria-modal="false" className="fixed inset-x-3 bottom-3 z-[95] max-h-[80dvh] space-y-3 overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-white p-4 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900 sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:z-30 sm:mt-2 sm:max-h-[70vh] sm:w-72 sm:shadow-xl">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-bold">{t("lists.addTitle")}</p>
+            <button type="button" onClick={() => setOpen(false)} aria-label={t("a11y.close")} className="grid h-8 w-8 place-items-center rounded-full text-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 sm:hidden">×</button>
+          </div>
           {rows === null ? (
             <p className="text-sm text-neutral-500">…</p>
           ) : rows.length === 0 ? (
@@ -113,6 +119,7 @@ export function AddToList({ meta }: { meta: Meta }) {
             </p>
           )}
         </div>
+        </>
       )}
     </div>
   );

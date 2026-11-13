@@ -132,7 +132,7 @@ export function AdminUsers({
         </p>
       )}
 
-      <ul className="space-y-2">
+      <ul className="max-h-[65dvh] overflow-y-auto overscroll-contain pr-1 space-y-2">
         {users.map((u) => {
           const mine = u.id === me;
           return (

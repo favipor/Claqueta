@@ -84,7 +84,7 @@ export function Reactions({
             </svg>
           </button>
           {open && (
-            <div className="absolute bottom-full left-0 z-20 mb-2 flex gap-1 rounded-full bg-white p-1.5 shadow-xl ring-1 ring-black/10 dark:bg-neutral-900 dark:ring-white/15">
+            <div className="absolute left-full top-1/2 z-20 ml-2 flex -translate-y-1/2 gap-1 rounded-full bg-white p-1.5 shadow-xl ring-1 ring-black/10 dark:bg-neutral-900 dark:ring-white/15">
               {EMOJIS.map((e, i) => (
                 <button
                   key={e}
