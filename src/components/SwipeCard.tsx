@@ -16,7 +16,7 @@ const OUT: Record<Choice, { x: number; y: number; rotate: number }> = {
 };
 
 // Una tarjeta con su PROPIA posición: así la que sale y la que entra nunca se mezclan
-export function SwipeCard({ item, onChoose, reduce, L }: { item: TmdbItem; onChoose: (c: Choice) => void; reduce: boolean; L: boolean }) {
+export function SwipeCard({ item, onChoose, reduce, L, onTap }: { item: TmdbItem; onChoose: (c: Choice) => void; reduce: boolean; L: boolean; onTap?: () => void }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotate = useTransform(x, [-220, 220], [-14, 14]);
@@ -38,6 +38,8 @@ export function SwipeCard({ item, onChoose, reduce, L }: { item: TmdbItem; onCho
       drag={!reduce}
       dragSnapToOrigin
       onDragEnd={onDragEnd}
+      // Un toque (sin arrastrar) abre la sinopsis, si quien la usa lo pide
+      onTap={onTap}
       style={{ x, y, rotate }}
       initial={reduce ? false : { scale: 0.94, y: 14, opacity: 0.5 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}

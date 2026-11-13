@@ -16,10 +16,11 @@ export default async function SwipePage() {
   if (!user) redirect("/login");
   const L = lang === "en";
   return (
-    <div className="space-y-6">
+    // Ocupa justo la pantalla (sin bajar) y queda centrado en vertical
+    <div className="-my-4 flex min-h-[calc(100dvh-8.5rem)] flex-col justify-center gap-3">
       <div className="text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight">{L ? "Swipe" : "Desliza"}</h1>
-        <p className="mx-auto mt-1 max-w-md text-sm text-neutral-500">
+        <h1 className="text-2xl font-extrabold tracking-tight">{L ? "Swipe" : "Desliza"}</h1>
+        <p className="mx-auto max-w-md text-xs text-neutral-500 [@media(max-height:720px)]:hidden">
           {L ? "Mark what you've seen, what you're watching and what you want to watch. Stop whenever you like." : "Marca lo que has visto, lo que estás viendo y lo que quieres ver. Paras cuando quieras."}
         </p>
       </div>
