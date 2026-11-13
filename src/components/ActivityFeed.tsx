@@ -108,7 +108,7 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
   return (
     <div
       ref={boxRef}
-      className="max-h-[calc(100dvh-13rem)] min-h-[16rem] overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/40 sm:p-3"
+      className="max-h-[75dvh] min-h-[16rem] overflow-y-auto lg:h-full lg:max-h-none overscroll-contain rounded-2xl border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/40 sm:p-3"
     >
       <ul className="space-y-2">
         {rows.map((r) => {

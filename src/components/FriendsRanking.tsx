@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { img } from "@/lib/tmdb";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
 import { Avatar } from "./Avatar";
@@ -6,10 +8,10 @@ import { Avatar } from "./Avatar";
 type Row = { user_id: string; username: string; display_name: string | null; avatar_url: string | null; episodes: number; movies: number; is_me: boolean };
 
 const MEDAL = ["🥇", "🥈", "🥉"];
-const PODIUM = ["from-yellow-300 to-amber-500 h-24", "from-slate-200 to-slate-400 h-16", "from-orange-300 to-amber-700 h-12"];
+const PODIUM = ["from-yellow-300 to-amber-500 h-16", "from-slate-200 to-slate-400 h-11", "from-orange-300 to-amber-700 h-8"];
 
 // Ranking de la semana entre tú y la gente que sigues (solo quien comparte su actividad)
-export async function FriendsRanking({ hidden }: { hidden: boolean }) {
+export async function FriendsRanking({ hidden, posters = [] }: { hidden: boolean; posters?: string[] }) {
   const { lang } = await getT();
   const L = lang === "en";
   const supabase = await createClient();
@@ -18,19 +20,28 @@ export async function FriendsRanking({ hidden }: { hidden: boolean }) {
   const rows = ((data ?? []) as Row[]).map((r) => ({ ...r, total: r.episodes + r.movies })).filter((r) => r.total > 0 || r.is_me);
   if (rows.filter((r) => r.total > 0).length < 2 && !rows.some((r) => r.is_me && r.total > 0)) return null;
   const top = rows.slice(0, 3);
-  const rest = rows.slice(3, 8);
+  const rest = rows.slice(3, 6);
   const order = [1, 0, 2].filter((k) => top[k]); // podio: 2º, 1º, 3º
   const name = (r: Row) => (r.is_me ? (L ? "You" : "Tú") : r.display_name ?? `@${r.username}`);
   const line = (r: Row & { total: number }) =>
     [r.episodes ? (L ? `${r.episodes} ep.` : `${r.episodes} cap.`) : null, r.movies ? (L ? `${r.movies} movies` : `${r.movies} pelis`) : null].filter(Boolean).join(" · ") || "—";
 
   return (
-    <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-700 to-fuchsia-800 p-5 text-white shadow-lg">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <section className="relative shrink-0 overflow-hidden rounded-3xl bg-neutral-950 p-5 text-white shadow-lg">
+      {/* Fondo: carátulas de lo que ven tus amigos, inclinadas y con un velo de color */}
+      <div className="pointer-events-none absolute -inset-10 flex -rotate-6 flex-wrap gap-2 opacity-40" aria-hidden="true">
+        {posters.concat(posters).slice(0, 16).map((p, i) => (
+          <span key={i} className="relative h-28 w-20 overflow-hidden rounded-lg">
+            <Image src={img(p, "w92")!} alt="" fill sizes="80px" className="object-cover" />
+          </span>
+        ))}
+      </div>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-950/85 via-violet-950/80 to-fuchsia-950/90" aria-hidden="true" />
+      <div className="relative flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-extrabold">🏆 {L ? "This week among friends" : "Esta semana entre amigos"}</h2>
         <p className="text-xs text-white/70">{L ? "Episodes + movies watched since Monday" : "Capítulos y pelis vistos desde el lunes"}</p>
       </div>
-      <div className="mt-4 flex items-end justify-center gap-3">
+      <div className="relative mt-4 flex items-end justify-center gap-3">
         {order.map((k) => {
           const r = top[k];
           return (
@@ -49,7 +60,7 @@ export async function FriendsRanking({ hidden }: { hidden: boolean }) {
         })}
       </div>
       {rest.length > 0 && (
-        <ol start={4} className="mt-3 space-y-1.5 rounded-2xl bg-black/20 p-2">
+        <ol start={4} className="relative mt-3 space-y-1.5 rounded-2xl bg-black/30 p-2">
           {rest.map((r, i) => (
             <li key={r.user_id}>
               <Link href={`/u/${r.username}`} className={`flex items-center gap-3 rounded-xl px-2 py-1.5 text-sm hover:bg-white/10 ${r.is_me ? "bg-white/15" : ""}`}>
@@ -62,7 +73,7 @@ export async function FriendsRanking({ hidden }: { hidden: boolean }) {
           ))}
         </ol>
       )}
-      {hidden && <p className="mt-3 text-xs text-white/75">🙈 {L ? "You don't appear because your activity is hidden." : "Tú no apareces porque tienes tu actividad oculta."}</p>}
+      {hidden && <p className="relative mt-3 text-xs text-white/75">🙈 {L ? "You don't appear because your activity is hidden." : "Tú no apareces porque tienes tu actividad oculta."}</p>}
     </section>
   );
 }
