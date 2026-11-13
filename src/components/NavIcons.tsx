@@ -44,6 +44,16 @@ export function BookmarkIcon({ className }: P) {
   );
 }
 
+// Dos carátulas apiladas, una inclinada: «Desliza»
+export function SwipeIcon({ className }: P) {
+  return (
+    <Svg className={className}>
+      <rect x="3" y="6" width="11" height="15" rx="2" />
+      <path d="m14.5 4.2 4.9 1.3a2 2 0 0 1 1.4 2.4l-3 11.2" />
+    </Svg>
+  );
+}
+
 export function ArrowRightIcon({ className }: P) {
   return (
     <Svg className={className}>

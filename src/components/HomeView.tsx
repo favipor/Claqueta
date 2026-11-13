@@ -8,7 +8,7 @@ import { ScrollRow } from "./ScrollRow";
 import { GuideVideoButton } from "./GuideVideo";
 import { InfiniteCatalog } from "./InfiniteCatalog";
 import { SearchBox } from "./SearchBox";
-import { BookmarkIcon, FilmIcon, TvIcon } from "./NavIcons";
+import { BookmarkIcon, FilmIcon, SwipeIcon, TvIcon } from "./NavIcons";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { computeRecs, likedTitles, RECS_COOKIE, type LikedTitle, type RecsResult } from "@/lib/recs";
@@ -145,6 +145,11 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
               {loggedIn && (
                 <HeroLink href="/mi-lista" active={false} icon={<BookmarkIcon className="h-6 w-6" />}>
                   {t("nav.myList")}
+                </HeroLink>
+              )}
+              {loggedIn && (
+                <HeroLink href="/desliza" active={false} icon={<SwipeIcon className="h-6 w-6" />}>
+                  {lang === "en" ? "Swipe" : "Desliza"}
                 </HeroLink>
               )}
             </div>

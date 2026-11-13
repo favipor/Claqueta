@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
 import { getDiscover, getTrending, type TmdbItem } from "@/lib/tmdb";
 import { GuidedStart } from "@/components/GuidedStart";
+import { shuffle } from "@/lib/swipe";
 
 export const metadata = { title: "Empieza", robots: { index: false } };
 
@@ -26,7 +27,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
   ]);
   const have = new Set((mine.data ?? []).map((m) => `${m.media_type}-${m.tmdb_id}`));
-  // Se intercalan: clásicos de cine, series muy valoradas y lo que se ve ahora
+  // Se intercalan y luego se barajan (cada vez en otro orden): clásicos de cine, series muy valoradas y lo que se ve ahora
   const lists = [movies.items, shows.items, trend];
   const seen = new Set<string>();
   const pool: TmdbItem[] = [];
@@ -40,5 +41,5 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       pool.push(it);
     }
   }
-  return <GuidedStart pool={pool.slice(0, 40)} username={prof.data?.username ?? null} direct={directo === "1"} />;
+  return <GuidedStart pool={shuffle(pool).slice(0, 40)} username={prof.data?.username ?? null} direct={directo === "1"} />;
 }

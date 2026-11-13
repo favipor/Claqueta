@@ -7,6 +7,7 @@ import { STATUSES, type Status } from "@/lib/dict";
 import { getTvSeasons, type TvSeason } from "@/lib/tmdb";
 import { ListControls } from "@/components/ListControls";
 import { RandomPick } from "@/components/RandomPick";
+import { SwipeIcon } from "@/components/NavIcons";
 import { SORTS, type Sort } from "@/lib/list-sort";
 import { genreName } from "@/lib/genres";
 import { readWatchedForTitles } from "@/lib/tv-state";
@@ -124,6 +125,14 @@ export default async function MyListPage({
         {/* En el móvil: «¿Qué veo hoy?» ocupa el ancho y Excel queda en dos botones de icono */}
         <div className="flex items-center gap-2">
           <RandomPick />
+          <Link
+            href="/desliza"
+            title={uiLang === "en" ? "Mark titles by swiping posters" : "Marca títulos deslizando carátulas"}
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 px-3.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5"
+          >
+            <SwipeIcon className="h-4 w-4" />
+            {uiLang === "en" ? "Swipe" : "Desliza"}
+          </Link>
           <Link
             href="/importar"
             title={t("imp.link")}
