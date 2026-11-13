@@ -43,7 +43,7 @@ export default async function ActivityPage() {
       )}
       {/* Izquierda: ranking + lo más visto · Derecha: actividad con su propio scroll. En ordenador ocupa justo la pantalla */}
       <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-        <div className="flex min-h-0 flex-col gap-5">
+        <div className="flex min-h-0 flex-col gap-5 lg:h-full">
           <FriendsRanking hidden={me?.share_activity === false} posters={posters} />
           <FriendsTrending rows={rows} />
         </div>

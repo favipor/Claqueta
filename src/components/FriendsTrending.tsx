@@ -23,16 +23,16 @@ export async function FriendsTrending({ rows }: { rows: ActivityRow[] }) {
   const posters = top.map((x) => x.r.poster_path).filter((p): p is string => !!p);
 
   return (
-    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-neutral-950 p-5 text-white shadow-lg">
+    <section className="relative flex min-h-[18rem] flex-col overflow-hidden rounded-3xl bg-gradient-to-br from-orange-600 via-rose-700 to-red-900 p-5 text-white shadow-lg ring-1 ring-white/10 lg:min-h-0 lg:flex-1 lg:basis-0">
       {/* Carátulas de fondo, difuminadas */}
-      <div className="pointer-events-none absolute inset-0 grid grid-cols-3 gap-1 opacity-35 blur-[2px]" aria-hidden="true">
+      <div className="pointer-events-none absolute -inset-6 grid -rotate-3 grid-cols-3 gap-1.5 opacity-55 blur-[1px]" aria-hidden="true">
         {posters.concat(posters).slice(0, 6).map((p, i) => (
           <div key={i} className="relative">
             <Image src={img(p, "w185")!} alt="" fill sizes="140px" className="object-cover" />
           </div>
         ))}
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-neutral-950/70 via-neutral-950/85 to-neutral-950" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-900/80 via-rose-900/80 to-red-950/90" aria-hidden="true" />
 
       <div className="relative">
         <h2 className="text-lg font-extrabold">🔥 {L ? "Hot among your friends" : "Lo que más se ve entre tus amigos"}</h2>
@@ -41,12 +41,12 @@ export async function FriendsTrending({ rows }: { rows: ActivityRow[] }) {
       {top.length === 0 ? (
         <p className="relative mt-4 text-sm text-white/75">{L ? "Your friends haven't marked anything this week yet." : "Tus amigos aún no han marcado nada esta semana."}</p>
       ) : (
-        <ol className="relative mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
+        <ol className="scroll-slim relative mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
           {top.map(({ r, people, ratings }, i) => {
             const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
             return (
               <li key={`${r.media_type}-${r.tmdb_id}`}>
-                <Link href={`/titulo/${r.media_type}/${r.tmdb_id}`} className="flex items-center gap-3 rounded-2xl bg-white/5 p-2 ring-1 ring-white/10 transition hover:bg-white/10">
+                <Link href={`/titulo/${r.media_type}/${r.tmdb_id}`} className="flex items-center gap-3 rounded-2xl bg-black/25 p-2 ring-1 ring-white/10 transition hover:bg-black/40">
                   <span className="w-5 text-center text-lg font-black text-amber-300">{i + 1}</span>
                   <span className="relative h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-white/10">
                     {r.poster_path && <Image src={img(r.poster_path, "w92")!} alt="" fill sizes="40px" className="object-cover" />}
@@ -56,7 +56,7 @@ export async function FriendsTrending({ rows }: { rows: ActivityRow[] }) {
                     <span className="mt-1 flex items-center gap-2">
                       <span className="flex -space-x-2">
                         {people.slice(0, 4).map((p) => (
-                          <span key={p.user_id} className="rounded-full ring-2 ring-neutral-950">
+                          <span key={p.user_id} className="rounded-full ring-2 ring-rose-950">
                             <Avatar url={p.avatar_url} size={20} />
                           </span>
                         ))}

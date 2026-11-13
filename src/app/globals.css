@@ -226,3 +226,9 @@ html.a11y-motion .clap-stick {
 
 /* Desliza en el móvil: sin botones flotantes para que la carátula ocupe toda la pantalla */
 @media (max-width: 639px) { body:has(.swipe-page) .float-btn { display: none; } }
+
+/* Barra de scroll fina y discreta dentro de cuadros de color */
+.scroll-slim { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .3) transparent; }
+.scroll-slim::-webkit-scrollbar { width: 6px; }
+.scroll-slim::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .3); border-radius: 9999px; }
+.scroll-slim::-webkit-scrollbar-track { background: transparent; }
