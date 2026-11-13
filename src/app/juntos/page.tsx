@@ -5,6 +5,7 @@ import { getT } from "@/lib/i18n-server";
 import { FriendsTabs } from "@/components/FriendsTabs";
 import { FriendPicker } from "@/components/FriendPicker";
 import { Avatar } from "@/components/Avatar";
+import { BannerBg } from "@/components/BannerBg";
 import { WatchTogether, type TogetherItem } from "@/components/WatchTogether";
 import { TogetherHero, type Compat } from "@/components/TogetherHero";
 import { PlansPanel, type Plan } from "@/components/PlansPanel";
@@ -12,16 +13,6 @@ import { PlansPanel, type Plan } from "@/components/PlansPanel";
 export const metadata = { title: "¿Qué vemos juntos?", robots: { index: false } };
 
 type Friend = { id: string; username: string; display_name: string | null; avatar_url: string | null };
-
-// Colores distintos para cada amigo en las tarjetas de elegir
-const TONES = [
-  "from-rose-400 to-fuchsia-600",
-  "from-sky-400 to-indigo-600",
-  "from-amber-400 to-orange-600",
-  "from-emerald-400 to-teal-700",
-  "from-violet-400 to-purple-700",
-  "from-lime-400 to-green-700",
-];
 
 // «¿Qué vemos juntos?»: eliges a un amigo (os seguís mutuamente) y se cruzan vuestros pendientes
 export default async function TogetherPage({ searchParams }: { searchParams: Promise<{ con?: string }> }) {
@@ -41,6 +32,12 @@ export default async function TogetherPage({ searchParams }: { searchParams: Pro
   // Sin repetidos (la lista de seguidores mutuos puede traer a alguien dos veces)
   const friends = [...new Map(((data ?? []) as Friend[]).filter((f) => f.username).map((f) => [f.id, f])).values()].sort((a, b) => (a.display_name ?? a.username).localeCompare(b.display_name ?? b.username));
   const friend = friends.find((f) => f.username === con) ?? null;
+  // Banner que cada amigo eligió para su tarjeta (solo hace falta para elegir con quién)
+  const banners = new Map<string, string | null>();
+  if (!friend && friends.length) {
+    const { data: rows } = await supabase.from("profiles").select("id, banner").in("id", friends.slice(0, 8).map((f) => f.id));
+    for (const r of rows ?? []) banners.set(r.id as string, r.banner as string | null);
+  }
   let items: TogetherItem[] = [];
   let compat: Compat | null = null;
   let plans: Plan[] = [];
@@ -97,23 +94,30 @@ export default async function TogetherPage({ searchParams }: { searchParams: Pro
               <WatchTogether key={`wt-${friend.id}`} items={items} friendName={friendName} friendAvatar={friend.avatar_url} friendId={friend.id} />
             </>
           ) : (
-            // Sin amigo elegido: tarjetas grandes y de colores para escoger con quién
+            // Sin amigo elegido: su tarjeta de perfil (con el banner que eligió) para escoger con quién
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {friends.slice(0, 8).map((f, i) => (
+              {friends.slice(0, 8).map((f) => (
                 <li key={f.id}>
                   <Link
                     href={`/juntos?con=${f.username}`}
                     scroll={false}
-                    className={`group relative flex flex-col items-center overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-center text-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl ${TONES[i % TONES.length]}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-hover dark:border-neutral-800 dark:bg-neutral-900"
                   >
-                    <span className="pointer-events-none absolute -right-6 -top-6 text-7xl opacity-20 transition group-hover:rotate-12" aria-hidden="true">
-                      🍿
+                    <span className="relative block h-20 overflow-hidden sm:h-24">
+                      <BannerBg banner={banners.get(f.id)} username={f.username} />
+                      <span className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/40" aria-hidden="true" />
                     </span>
-                    <span className="rounded-full ring-4 ring-white/70">
-                      <Avatar url={f.avatar_url} size={64} />
+                    <span className="flex flex-1 flex-col items-center px-3 pb-4 text-center">
+                      <span className="relative z-10 -mt-9 rounded-full ring-4 ring-white transition group-hover:scale-105 dark:ring-neutral-900">
+                        <Avatar url={f.avatar_url} size={64} />
+                      </span>
+                      <span className="mt-2 w-full truncate font-extrabold">{f.display_name ?? f.username}</span>
+                      <span className="w-full truncate text-xs text-neutral-500">@{f.username}</span>
+                      <span className="mt-3 whitespace-nowrap rounded-full bg-brand-fg/10 px-3 py-1.5 text-xs font-bold text-brand-fg ring-1 ring-inset ring-brand-fg/30 transition group-hover:bg-brand group-hover:text-white group-hover:ring-brand">
+                        🍿 <span className="sm:hidden">{L ? "In common" : "En común"}</span>
+                        <span className="hidden sm:inline">{L ? "See what you share" : "Ver qué tenéis en común"}</span>
+                      </span>
                     </span>
-                    <span className="mt-3 w-full truncate font-extrabold">{f.display_name ?? `@${f.username}`}</span>
-                    <span className="mt-1 text-xs font-semibold text-white/85">{L ? "See what you share →" : "Ver qué tenéis en común →"}</span>
                   </Link>
                 </li>
               ))}
