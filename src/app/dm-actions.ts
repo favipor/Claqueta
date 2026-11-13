@@ -97,7 +97,8 @@ export async function listMutualFollowers(): Promise<
   const { supabase, user } = await getUser();
   if (!user) return [];
   const { data } = await supabase.rpc("mutual_followers");
-  return (data ?? []) as never;
+  // Sin repetidos
+  return [...new Map(((data ?? []) as { id: string }[]).map((f) => [f.id, f])).values()] as never;
 }
 
 // «Añadir a pendientes» desde una recomendación: no pisa el estado que ya tengas

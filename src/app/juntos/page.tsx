@@ -38,7 +38,8 @@ export default async function TogetherPage({ searchParams }: { searchParams: Pro
     supabase.rpc("mutual_followers"),
     supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle(),
   ]);
-  const friends = ((data ?? []) as Friend[]).filter((f) => f.username).sort((a, b) => (a.display_name ?? a.username).localeCompare(b.display_name ?? b.username));
+  // Sin repetidos (la lista de seguidores mutuos puede traer a alguien dos veces)
+  const friends = [...new Map(((data ?? []) as Friend[]).filter((f) => f.username).map((f) => [f.id, f])).values()].sort((a, b) => (a.display_name ?? a.username).localeCompare(b.display_name ?? b.username));
   const friend = friends.find((f) => f.username === con) ?? null;
   let items: TogetherItem[] = [];
   let compat: Compat | null = null;

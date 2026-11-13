@@ -87,7 +87,7 @@ export function TitleReactions({ reactions }: { reactions: TitleReaction[] }) {
                   </span>
                 ))}
               </div>
-              <ul className="max-h-[50dvh] overflow-y-auto overscroll-contain p-2">
+              <ul className="max-h-[17.5rem] overflow-y-auto overscroll-contain p-2">
                 {reactions.map((r) => (
                   <li key={r.username}>
                     <Link href={`/u/${r.username}`} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">

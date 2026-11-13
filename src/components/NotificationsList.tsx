@@ -68,7 +68,8 @@ export function NotificationsList({ items }: { items: NotifItem[] }) {
 
   return (
     <div className="space-y-3">
-      <ul className="space-y-2">
+      {/* Recuadro ajustado a la pantalla con su propio scroll, en vez de una página infinita */}
+      <ul className="max-h-[calc(100dvh-15rem)] min-h-[16rem] space-y-2 overflow-y-auto overscroll-contain rounded-2xl border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/40 sm:p-3">
         {items.map((n) => {
           const who = n.actor?.name ?? "?";
           const res = answered[n.id];

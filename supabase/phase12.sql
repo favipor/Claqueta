@@ -145,14 +145,16 @@ language sql stable security definer set search_path = public as $$
     select f.following_id from public.follows f join public.profiles p on p.id = f.following_id
     where f.follower_id = auth.uid() and f.status = 'accepted' and p.share_activity and not public.blocked_between(auth.uid(), f.following_id)
   )
+  select * from (
   select p.id, p.username, p.display_name, p.avatar_url,
-    (select count(*) from public.user_episodes e, wk where e.user_id = p.id and e.watched_at >= wk.since)::int,
+    (select count(*) from public.user_episodes e, wk where e.user_id = p.id and e.watched_at >= wk.since)::int as episodes,
     (select count(*) from public.user_titles t, wk where t.user_id = p.id and t.media_type = 'movie' and t.status in ('visto','volver_a_ver')
-       and coalesce(t.watched_on::timestamptz, t.updated_at) >= wk.since)::int,
-    p.id = auth.uid()
+       and coalesce(t.watched_on::timestamptz, t.updated_at) >= wk.since)::int as movies,
+    p.id = auth.uid() as is_me
   from people x join public.profiles p on p.id = x.id
   where p.username is not null
-  order by 5 + 6 desc, p.username
+  ) r
+  order by r.episodes + r.movies desc, r.username
   limit 20;
 $$;
 grant execute on function public.friends_ranking() to authenticated;
@@ -191,7 +193,7 @@ language sql stable security definer set search_path = public as $$
      where t.user_id = p.id and t.status in ('visto','volver_a_ver'))::int,
     p.id = auth.uid()
   from members x join public.profiles p on p.id = x.user_id
-  order by 5 desc, p.username;
+  order by 5 desc, 2;
 $$;
 grant execute on function public.challenge_progress(text, integer[], text[]) to authenticated;
 
