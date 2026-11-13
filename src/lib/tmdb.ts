@@ -166,6 +166,16 @@ export async function searchCandidates(
 }
 
 // Duración (película o capítulo medio) y géneros, para las estadísticas del perfil.
+// Título y cartel de un título (para listas fijas como los retos)
+export async function getBasic(type: MediaType, id: number, lang: string): Promise<{ title: string; poster_path: string | null }> {
+  try {
+    const d: any = await tmdb(`/${type}/${id}`, lang);
+    return { title: (type === "movie" ? d.title : d.name) ?? "?", poster_path: d.poster_path ?? null };
+  } catch {
+    return { title: "?", poster_path: null };
+  }
+}
+
 export async function getTitleMeta(
   type: MediaType,
   id: number

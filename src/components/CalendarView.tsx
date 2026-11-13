@@ -11,7 +11,7 @@ import { PREF_COOKIES, savePref } from "@/lib/prefs";
 
 export type CalMode = "estrenos" | "visto" | "ambos";
 export type CalEvent = {
-  kind: "release" | "seen";
+  kind: "release" | "seen" | "plan";
   date: string;
   tmdb_id: number;
   media_type: MediaType;
@@ -24,7 +24,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 // Tipo de evento: siempre con icono + texto (no solo color)
 function KindBadge({ kind }: { kind: CalEvent["kind"] }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  if (kind === "plan")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-bold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+        💞 {lang === "en" ? "Plan" : "Plan"}
+      </span>
+    );
   return kind === "release" ? (
     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
       📅 {t("cal.release")}
@@ -213,7 +219,8 @@ export function CalendarView({
             const isToday = d === todayKey;
             const isSel = d === selected;
             const rel = list.filter((e) => e.kind === "release").length;
-            const seen = list.length - rel;
+            const seen = list.filter((e) => e.kind === "seen").length;
+            const plan = list.some((e) => e.kind === "plan");
             return (
               <button
                 key={d}
@@ -238,13 +245,14 @@ export function CalendarView({
                     <span className="flex flex-wrap gap-1 sm:hidden" aria-hidden="true">
                       {rel > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
                       {seen > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+                      {plan && <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />}
                     </span>
                     <span className="hidden gap-1 sm:flex" aria-hidden="true">
                       {list.slice(0, 3).map((e, j) => (
                         <span
                           key={j}
                           className={`relative aspect-[2/3] w-7 overflow-hidden rounded bg-neutral-200 ring-2 dark:bg-neutral-800 ${
-                            e.kind === "release" ? "ring-amber-400" : "ring-emerald-500"
+                            e.kind === "plan" ? "ring-rose-500" : e.kind === "release" ? "ring-amber-400" : "ring-emerald-500"
                           }`}
                         >
                           {e.poster_path && <Image src={img(e.poster_path, "w92")!} alt="" fill sizes="28px" className="object-cover" />}

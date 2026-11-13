@@ -67,6 +67,10 @@ export default async function NotificationsPage() {
           ? a?.username
             ? `/mensajes/${a.username}`
             : null
+          : n.type === "match" || n.type.startsWith("plan_")
+            ? a?.username
+              ? `/juntos?con=${a.username}${n.type.startsWith("plan_") ? "#planes" : ""}`
+              : "/juntos"
           : n.type === "reaction"
             ? n.tmdb_id && n.media_type
               ? `/titulo/${n.media_type}/${n.tmdb_id}?reacciones=1`

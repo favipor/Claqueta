@@ -9,6 +9,9 @@ import { Avatar } from "./Avatar";
 export type PickFriend = { id: string; username: string; display_name: string | null; avatar_url: string | null };
 
 const QUICK = 5;
+// Un color propio para cada amigo (siempre el mismo, según su nombre de usuario)
+const TONES = ["from-rose-400 to-fuchsia-600", "from-sky-400 to-indigo-600", "from-amber-400 to-orange-600", "from-emerald-400 to-teal-700", "from-violet-400 to-purple-700", "from-lime-400 to-green-700"];
+const toneOf = (u: string) => TONES[[...u].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
 
 // Selector de amigo: unos pocos accesos directos y un desplegable con buscador para todos
 export function FriendPicker({ friends, current }: { friends: PickFriend[]; current: string | null }) {
@@ -40,14 +43,18 @@ export function FriendPicker({ friends, current }: { friends: PickFriend[]; curr
   const filtered = friends.filter((f) => !q.trim() || `${f.display_name ?? ""} ${f.username}`.toLowerCase().includes(q.trim().toLowerCase()));
   const chip = (on: boolean) =>
     `flex shrink-0 items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 text-sm font-semibold ring-1 transition ${
-      on ? "bg-brand text-white ring-brand shadow-md shadow-brand/30" : "bg-white ring-neutral-200 hover:-translate-y-0.5 hover:ring-brand-fg dark:bg-neutral-900 dark:ring-neutral-700"
+      on ? "bg-gradient-to-r from-rose-500 to-fuchsia-600 text-white ring-transparent shadow-md shadow-fuchsia-500/30" : "bg-white ring-neutral-200 hover:-translate-y-0.5 hover:ring-brand-fg dark:bg-neutral-900 dark:ring-neutral-700"
     }`;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {quick.map((f) => (
         <Link key={f.id} href={`/juntos?con=${f.username}`} scroll={false} aria-current={f.username === current ? "true" : undefined} className={chip(f.username === current)}>
-          <Avatar url={f.avatar_url} size={30} />
+          <span className={`rounded-full bg-gradient-to-br p-[2px] ${toneOf(f.username)}`}>
+            <span className="block rounded-full bg-white p-[1px] dark:bg-neutral-900">
+              <Avatar url={f.avatar_url} size={28} />
+            </span>
+          </span>
           {name(f)}
         </Link>
       ))}

@@ -18,6 +18,10 @@ function titleFor(type: string) {
     case "new_episode": return "📺 Capítulo nuevo";
     case "new_user": return "🆕 Nuevo registro";
     case "reaction": return "🔥 Han reaccionado a lo tuyo";
+    case "match": return "💞 ¡Match!";
+    case "plan_invite": return "📅 Te proponen un plan";
+    case "plan_accepted": return "🎉 ¡Plan aceptado!";
+    case "plan_declined": return "📅 Plan rechazado";
     case "app_error": return "⚠️ Error en Claqueta";
     default: return "Claqueta";
   }
@@ -74,6 +78,13 @@ export async function POST(request: Request) {
     case "recommendation":
       body = `${who} ${t(`notif.${n.type}` as DictKey)}${titleName ? ` ${titleName}` : ""}`;
       url = actor?.username ? `/mensajes/${actor.username}` : "/mensajes";
+      break;
+    case "match":
+    case "plan_invite":
+    case "plan_accepted":
+    case "plan_declined":
+      body = n.type === "match" ? `${t("notif.match")} ${titleName} (con ${who})` : `${who} ${t(`notif.${n.type}` as DictKey)} ${titleName}`.trim();
+      url = actor?.username ? `/juntos?con=${actor.username}${n.type === "match" ? "" : "#planes"}` : "/juntos";
       break;
     case "reaction":
       body = `${who} ${t("notif.reaction")} ${titleName}`.trim();

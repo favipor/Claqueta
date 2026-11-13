@@ -115,7 +115,7 @@ export function NavbarClient({ account }: { account: Account | null }) {
     ...(userName ? [] : [{ href: "/guia", label: t("nav.guide"), Icon: BookIcon }]),
   ];
   // «Amigos» queda marcado también en Descubrir gente
-  const isActive = (href: string) => pathname === href || (href === "/actividad" && (pathname === "/descubrir" || pathname === "/juntos"));
+  const isActive = (href: string) => pathname === href || (href === "/actividad" && (pathname === "/descubrir" || pathname === "/juntos" || pathname === "/retos"));
 
   const searchClass =
     "w-full rounded-full border border-neutral-300 bg-neutral-100 px-4 py-1.5 text-sm outline-none focus:border-brand-fg dark:border-neutral-700 dark:bg-neutral-900";

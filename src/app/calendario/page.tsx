@@ -141,6 +141,31 @@ export default async function CalendarPage({
     }
   }
 
+  // ---- Planes con amigos (confirmados o pendientes de respuesta) ----
+  {
+    const { data: plans } = await supabase
+      .from("watch_plans")
+      .select("creator_id, invitee_id, tmdb_id, media_type, title, poster_path, plan_date, status")
+      .in("status", ["pending", "accepted"])
+      .gte("plan_date", from)
+      .lte("plan_date", to);
+    const others = [...new Set((plans ?? []).map((p) => (p.creator_id === user.id ? p.invitee_id : p.creator_id) as string))];
+    const { data: people } = others.length ? await supabase.from("profiles").select("id, display_name, username").in("id", others) : { data: [] };
+    const nameOf = new Map((people ?? []).map((x) => [x.id as string, (x.display_name as string | null) ?? `@${x.username}`]));
+    for (const p of plans ?? []) {
+      const other = nameOf.get((p.creator_id === user.id ? p.invitee_id : p.creator_id) as string) ?? "";
+      events.push({
+        kind: "plan",
+        date: p.plan_date as string,
+        tmdb_id: p.tmdb_id as number,
+        media_type: p.media_type as MediaType,
+        title: p.title as string,
+        poster_path: (p.poster_path as string | null) ?? null,
+        label: `${lang === "en" ? "With" : "Con"} ${other}${p.status === "pending" ? (lang === "en" ? " · pending" : " · por confirmar") : ""}`,
+      });
+    }
+  }
+
   events.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 
   return <CalendarView year={year} month={month} mode={mode} cinema={cinema} events={events} onlyMine={onlyMine} hasProviders={myProviders.length > 0} />;

@@ -700,6 +700,13 @@ const es = {
   "disc.rowAffinity": "Muy afines a ti",
   "disc.rowShared": "Con títulos en común",
   "disc.rowMore": "Más gente en Claqueta",
+  "notif.match": "💞 ¡Match! Los dos queréis ver",
+  "notif.plan_invite": "te propone ver",
+  "notif.plan_accepted": "ha aceptado tu plan para ver",
+  "notif.plan_declined": "no puede en esa fecha ver",
+  "together.retos": "Retos",
+  "disc.bothHave": "Los dos tenéis",
+  "disc.andMore": "y {n} más",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1402,6 +1409,13 @@ const en: Record<keyof typeof es, string> = {
   "disc.rowAffinity": "Very much your taste",
   "disc.rowShared": "With titles in common",
   "disc.rowMore": "More people on Claqueta",
+  "notif.match": "💞 It's a match! You both want to watch",
+  "notif.plan_invite": "wants to watch with you",
+  "notif.plan_accepted": "accepted your plan to watch",
+  "notif.plan_declined": "can't make it to watch",
+  "together.retos": "Challenges",
+  "disc.bothHave": "You both have",
+  "disc.andMore": "and {n} more",
 };
 
 export type DictKey = keyof typeof es;

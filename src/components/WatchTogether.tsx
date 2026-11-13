@@ -8,12 +8,13 @@ import { img, type MediaType } from "@/lib/tmdb";
 import { useI18n } from "./I18nProvider";
 import { Avatar } from "./Avatar";
 import { TitleCard } from "./TitleCard";
+import { PlanButton } from "./PlanButton";
 
 export type TogetherItem = { tmdb_id: number; media_type: MediaType; title: string; poster_path: string | null; who: "both" | "me" | "friend" };
 type Kind = "all" | MediaType;
 
 // Resultado de cruzar vuestros pendientes + ruleta que elige por vosotros
-export function WatchTogether({ items, friendName, friendAvatar }: { items: TogetherItem[]; friendName: string; friendAvatar: string | null }) {
+export function WatchTogether({ items, friendName, friendAvatar, friendId }: { items: TogetherItem[]; friendName: string; friendAvatar: string | null; friendId: string }) {
   const { t, lang } = useI18n();
   const reduce = useReducedMotion();
   const L = lang === "en";
@@ -43,17 +44,30 @@ export function WatchTogether({ items, friendName, friendAvatar }: { items: Toge
     const rows = groups[id];
     if (!rows.length) return null;
     const shown = more[id] ? rows : rows.slice(0, 10);
+    const STYLE = {
+      both: "rounded-3xl bg-gradient-to-br from-rose-50 to-fuchsia-50 p-4 ring-1 ring-rose-200 dark:from-rose-950/40 dark:to-fuchsia-950/30 dark:ring-rose-900 sm:p-5",
+      friend: "rounded-3xl bg-sky-50/70 p-4 ring-1 ring-sky-100 dark:bg-sky-950/20 dark:ring-sky-900/60 sm:p-5",
+      me: "rounded-3xl bg-amber-50/70 p-4 ring-1 ring-amber-100 dark:bg-amber-950/20 dark:ring-amber-900/60 sm:p-5",
+    } as const;
     return (
-      <section className="space-y-3">
+      <section className={`space-y-3 ${STYLE[id]}`}>
         <h2 className="flex items-center gap-2 text-lg font-bold">
           {icon}
           {title}
           <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{rows.length}</span>
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {shown.map((it) => (
-            <TitleCard key={`${it.media_type}-${it.tmdb_id}`} id={it.tmdb_id} type={it.media_type} title={it.title} posterPath={it.poster_path} reveal={false} />
-          ))}
+          {shown.map((it) =>
+            id === "both" ? (
+              <div key={`${it.media_type}-${it.tmdb_id}`} className="relative space-y-2">
+                <span className="absolute -right-1.5 -top-1.5 z-10 rounded-full bg-gradient-to-r from-rose-500 to-fuchsia-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow-md">💞 Match</span>
+                <TitleCard id={it.tmdb_id} type={it.media_type} title={it.title} posterPath={it.poster_path} reveal={false} />
+                <PlanButton friendId={friendId} friendName={friendName} meta={{ tmdb_id: it.tmdb_id, media_type: it.media_type, title: it.title, poster_path: it.poster_path }} />
+              </div>
+            ) : (
+              <TitleCard key={`${it.media_type}-${it.tmdb_id}`} id={it.tmdb_id} type={it.media_type} title={it.title} posterPath={it.poster_path} reveal={false} />
+            )
+          )}
         </div>
         {rows.length > 10 && (
           <div className="text-center">
@@ -102,6 +116,9 @@ export function WatchTogether({ items, friendName, friendAvatar }: { items: Toge
                   <Link href={`/titulo/${pick.media_type}/${pick.tmdb_id}`} className="mt-1 block text-3xl font-black leading-tight hover:underline sm:text-4xl">
                     {pick.title}
                   </Link>
+                  <div className="mt-3">
+                    <PlanButton key={`${pick.tmdb_id}-${spin}`} friendId={friendId} friendName={friendName} tone="dark" meta={{ tmdb_id: pick.tmdb_id, media_type: pick.media_type, title: pick.title, poster_path: pick.poster_path }} />
+                  </div>
                   <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold ring-1 ring-white/25">
                     {pick.who === "both" ? "💞 " + (L ? "You both want to watch it" : "Los dos la queréis ver") : pick.who === "friend" ? (L ? `On ${friendName}'s list` : `En la lista de ${friendName}`) : L ? "On your list" : "En tu lista"}
                   </p>

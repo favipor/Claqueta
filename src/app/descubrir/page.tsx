@@ -94,8 +94,16 @@ export default async function DiscoverPage() {
                       ) : null;
                     })}
                   </div>
-                  <p className="text-xs text-neutral-500">
-                    {p.shared_count} {t("disc.shared")}
+                  <p className="min-w-0 text-xs leading-snug text-neutral-600 dark:text-neutral-300">
+                    {/* Frase con el título que más le gustó de los que tenéis en común */}
+                    {p.shared?.[0] ? (
+                      <>
+                        🎬 {t("disc.bothHave")} <b className="text-neutral-900 dark:text-white">{p.shared[0].title}</b>
+                        {p.shared_count > 1 ? ` ${t("disc.andMore").replace("{n}", String(p.shared_count - 1))}` : ""}
+                      </>
+                    ) : (
+                      `${p.shared_count} ${t("disc.shared")}`
+                    )}
                   </p>
                 </div>
               ) : (

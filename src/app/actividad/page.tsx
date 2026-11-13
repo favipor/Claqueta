@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { FriendsTabs } from "@/components/FriendsTabs";
+import { FriendsRanking } from "@/components/FriendsRanking";
 import type { ActivityRow } from "@/app/profile-actions";
 
 export const metadata = { title: "Actividad", robots: { index: false } };
@@ -36,6 +37,7 @@ export default async function ActivityPage() {
           </Link>
         </p>
       )}
+      <FriendsRanking hidden={me?.share_activity === false} />
       <ActivityFeed initial={(data ?? []) as ActivityRow[]} myUsername={me?.username ?? null} />
     </div>
   );

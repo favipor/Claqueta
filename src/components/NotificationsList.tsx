@@ -12,7 +12,7 @@ import type { DictKey } from "@/lib/dict";
 
 export type NotifItem = {
   id: string;
-  type: "follow_request" | "follow" | "follow_accepted" | "reply" | "mention" | "recommendation" | "message" | "new_user" | "new_episode" | "app_error" | "reaction";
+  type: "follow_request" | "follow" | "follow_accepted" | "reply" | "mention" | "recommendation" | "message" | "new_user" | "new_episode" | "app_error" | "reaction" | "match" | "plan_invite" | "plan_accepted" | "plan_declined";
   unread: boolean;
   createdAt: string;
   actor: { id: string; username: string | null; name: string; avatarUrl: string | null } | null;
