@@ -16,7 +16,7 @@ const OUT: Record<Choice, { x: number; y: number; rotate: number }> = {
 };
 
 // Una tarjeta con su PROPIA posición: así la que sale y la que entra nunca se mezclan
-export function SwipeCard({ item, onChoose, reduce, L, onTap }: { item: TmdbItem; onChoose: (c: Choice) => void; reduce: boolean; L: boolean; onTap?: () => void }) {
+export function SwipeCard({ item, onChoose, reduce, L, tabSpace = false }: { item: TmdbItem; onChoose: (c: Choice) => void; reduce: boolean; L: boolean; tabSpace?: boolean }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotate = useTransform(x, [-220, 220], [-14, 14]);
@@ -38,8 +38,6 @@ export function SwipeCard({ item, onChoose, reduce, L, onTap }: { item: TmdbItem
       drag={!reduce}
       dragSnapToOrigin
       onDragEnd={onDragEnd}
-      // Un toque (sin arrastrar) abre la sinopsis, si quien la usa lo pide
-      onTap={onTap}
       style={{ x, y, rotate }}
       initial={reduce ? false : { scale: 0.94, y: 14, opacity: 0.5 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -49,7 +47,7 @@ export function SwipeCard({ item, onChoose, reduce, L, onTap }: { item: TmdbItem
       className="absolute inset-0 cursor-grab overflow-hidden rounded-3xl bg-neutral-800 shadow-2xl active:cursor-grabbing"
     >
       {poster && <Image src={poster} alt={item.title} fill sizes="384px" priority className="pointer-events-none object-cover" />}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 pt-20 text-white">
+      <div className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 pt-20 text-white ${tabSpace ? "pb-14" : ""}`}>
         <p className="text-2xl font-extrabold leading-tight drop-shadow">{item.title}</p>
         <p className="mt-1 text-sm text-white/80">
           {item.media_type === "movie" ? (L ? "Movie" : "Película") : L ? "Series" : "Serie"}

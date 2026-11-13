@@ -238,7 +238,7 @@ export function SwipeDeck() {
         )}
         {current ? (
           <AnimatePresence initial={false} custom={exitTo}>
-            <SwipeCard key={key(current)} item={current} onChoose={choose} reduce={reduce || !!rateFor} L={L} onTap={rateFor ? undefined : () => openInfo(current)} />
+            <SwipeCard key={key(current)} item={current} onChoose={choose} reduce={reduce || !!rateFor} L={L} tabSpace />
           </AnimatePresence>
         ) : (
           <div className="absolute inset-0 grid place-items-center rounded-3xl bg-neutral-100 text-center dark:bg-neutral-900">
@@ -248,6 +248,33 @@ export function SwipeDeck() {
               <span className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-300 border-t-brand" aria-label={L ? "Loading" : "Cargando"} />
             )}
           </div>
+        )}
+        {/* Pestaña «¿De qué va?»: fuera de la tarjeta, así tocarla o arrastrarla nunca mueve la carátula.
+            Se abre tirando hacia arriba o con un toque */}
+        {current && !rateFor && (
+          <motion.button
+            key={`tab-${key(current)}`}
+            type="button"
+            drag={reduce ? false : "y"}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0.5, bottom: 0 }}
+            dragSnapToOrigin
+            onDragEnd={(_, info) => {
+              if (info.offset.y < -25) openInfo(current);
+            }}
+            onClick={() => openInfo(current)}
+            initial={reduce ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            style={{ x: "-50%" }}
+            className="absolute bottom-2.5 left-1/2 z-10 flex touch-none flex-col items-center rounded-full bg-white/15 px-5 pb-1.5 pt-1 text-xs font-bold text-white ring-1 ring-white/30 backdrop-blur-md transition-colors hover:bg-white/25"
+            aria-label={L ? "What's it about? Pull up or tap" : "¿De qué va? Tira hacia arriba o toca"}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m6 15 6-6 6 6" />
+            </svg>
+            {L ? "What's it about?" : "¿De qué va?"}
+          </motion.button>
         )}
         <AnimatePresence>{rateFor && <RatePanel title={rateFor.title} onRate={rate} L={L} />}</AnimatePresence>
       </div>
@@ -270,7 +297,7 @@ export function SwipeDeck() {
           {L ? "Watched" : "Visto"}
         </button>
       </div>
-      <p className="mt-2 hidden text-center text-xs text-neutral-500 sm:block">{L ? "Tap the poster for the synopsis · swipe or use the arrow keys" : "Toca la carátula para ver de qué va · desliza o usa las flechas"}</p>
+      <p className="mt-2 hidden text-center text-xs text-neutral-500 sm:block">{L ? "Pull up “What's it about?” for the synopsis · swipe or use the arrow keys" : "Tira de «¿De qué va?» para ver la sinopsis · desliza o usa las flechas"}</p>
 
       {/* Hoja con la sinopsis al tocar la carátula (se cierra tocando fuera, arrastrando hacia abajo o con Escape) */}
       <AnimatePresence>
