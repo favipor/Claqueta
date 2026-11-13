@@ -150,14 +150,14 @@ export function CalendarView({
                 aria-checked={active}
                 onClick={() => go({ ver: m.key })}
                 className={`relative flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                  active ? "text-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  active ? "text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
                 }`}
               >
                 {active && (
                   <motion.span
                     layoutId="cal-mode"
                     transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 450, damping: 34 }}
-                    className="absolute inset-0 rounded-lg bg-white shadow ring-1 ring-black/5 dark:bg-neutral-950 dark:ring-white/10"
+                    className="absolute inset-0 rounded-lg bg-brand shadow"
                   />
                 )}
                 <span className="relative" aria-hidden="true">{m.icon}</span>

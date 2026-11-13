@@ -14,7 +14,7 @@ export async function FriendsTabs({ current }: { current: "feed" | "together" | 
     <nav className="no-scrollbar flex max-w-full overflow-x-auto rounded-xl bg-neutral-100 p-1 text-sm font-semibold dark:bg-neutral-800" aria-label={t("nav.friends")}>
       {tabs.map((tab) =>
         tab.id === current ? (
-          <span key={tab.id} aria-current="page" className="shrink-0 rounded-lg bg-white px-3 py-1.5 shadow ring-1 ring-black/5 dark:bg-neutral-950 dark:ring-white/10">
+          <span key={tab.id} aria-current="page" className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-white shadow">
             {tab.label}
           </span>
         ) : (

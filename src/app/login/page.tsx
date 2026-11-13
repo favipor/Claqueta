@@ -202,7 +202,7 @@ export default function LoginPage() {
                     role="tab"
                     aria-selected={mode === m}
                     onClick={() => go(m)}
-                    className={`rounded-lg py-2 transition ${mode === m ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"}`}
+                    className={`rounded-lg py-2 transition ${mode === m ? "bg-brand text-white shadow-sm" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"}`}
                   >
                     {t(m === "signin" ? "login.signin" : "login.signup")}
                   </button>

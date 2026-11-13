@@ -139,17 +139,17 @@ export function ListControls({
                 aria-checked={active}
                 onClick={() => go({ tipo: key })}
                 className={`relative flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-fg ${
-                  active ? "text-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  active ? "text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
                 }`}
               >
                 {active && (
                   <motion.span
                     layoutId="mylist-type"
                     transition={spring}
-                    className="absolute inset-0 rounded-lg bg-white shadow ring-1 ring-black/5 dark:bg-neutral-950 dark:ring-white/10"
+                    className="absolute inset-0 rounded-lg bg-brand shadow"
                   />
                 )}
-                <span className={`relative ${active ? "text-brand-fg" : ""}`}>{icon}</span>
+                <span className="relative">{icon}</span>
                 <span className="relative">{key === null ? t("list.all") : label}</span>
               </button>
             );

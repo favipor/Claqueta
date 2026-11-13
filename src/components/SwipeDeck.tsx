@@ -210,7 +210,7 @@ export function SwipeDeck() {
               aria-checked={kind === k}
               disabled={!!rateFor}
               onClick={() => setKind(k)}
-              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${kind === k ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-white" : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"}`}
+              className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${kind === k ? "bg-brand text-white shadow-sm" : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"}`}
             >
               {label}
             </button>

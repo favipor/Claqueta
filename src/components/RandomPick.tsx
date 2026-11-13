@@ -150,17 +150,17 @@ export function RandomPick() {
                           aria-checked={active}
                           onClick={() => setKind(k)}
                           className={`relative flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-sm font-semibold transition-colors ${
-                            active ? "text-neutral-950 dark:text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                            active ? "text-white" : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
                           }`}
                         >
                           {active && (
                             <motion.span
                               layoutId="pick-kind"
                               transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 450, damping: 34 }}
-                              className="absolute inset-0 rounded-lg bg-white shadow ring-1 ring-black/5 dark:bg-neutral-950 dark:ring-white/10"
+                              className="absolute inset-0 rounded-lg bg-brand shadow"
                             />
                           )}
-                          <span className={`relative ${active ? "text-brand-fg" : ""}`}>
+                          <span className="relative">
                             {k === "all" ? <GridIcon className="h-4 w-4" /> : k === "movie" ? <FilmIcon className="h-4 w-4" /> : <TvIcon className="h-4 w-4" />}
                           </span>
                           <span className="relative">{k === "all" ? t("list.all") : k === "movie" ? t("list.movies") : t("list.series")}</span>
