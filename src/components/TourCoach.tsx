@@ -90,18 +90,27 @@ export function TourCoach() {
   const step = st ? STEPS[st.step] : null;
   const here = !!step && pathname === step.path(st!.user);
 
-  // Resalta y centra el elemento del paso (p. ej. «Para ti»)
+  // Resalta y centra el elemento del paso (p. ej. «Para ti»). La página puede tardar en traerlo,
+  // así que se busca hasta que aparece y se recoloca un par de veces por si las imágenes de arriba lo mueven
   useEffect(() => {
     if (!here || !step?.target) return;
     let el: Element | null = null;
-    const t = setTimeout(() => {
+    let tries = 0;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const center = () => el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const look = () => {
       el = document.querySelector(step.target!);
-      if (!el) return;
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (!el) {
+        if (++tries < 50) timers.push(setTimeout(look, 300));
+        return;
+      }
       el.classList.add("tour-spot");
-    }, 600);
+      center();
+      timers.push(setTimeout(center, 900), setTimeout(center, 2000));
+    };
+    timers.push(setTimeout(look, 300));
     return () => {
-      clearTimeout(t);
+      timers.forEach(clearTimeout);
       el?.classList.remove("tour-spot");
     };
   }, [here, step]);
