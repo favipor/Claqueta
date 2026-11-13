@@ -223,3 +223,6 @@ html.a11y-motion .clap-stick {
 .tour-card { animation: tour-in .35s cubic-bezier(.2, .9, .3, 1.2) both; }
 .tour-spot { position: relative; border-radius: 1.25rem; box-shadow: 0 0 0 4px rgb(45 212 191 / .8), 0 0 0 12px rgb(45 212 191 / .2); transition: box-shadow .4s; }
 @media (prefers-reduced-motion: reduce) { .tour-card { animation: none; } }
+
+/* Desliza en el móvil: sin botones flotantes para que la carátula ocupe toda la pantalla */
+@media (max-width: 639px) { body:has(.swipe-page) .float-btn { display: none; } }

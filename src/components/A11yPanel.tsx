@@ -138,7 +138,7 @@ export function A11yPanel() {
         aria-expanded={open}
         aria-label={t("a11y.button")}
         title={t("a11y.button")}
-        className="fixed bottom-5 right-5 z-50 grid h-11 w-11 place-items-center rounded-full bg-neutral-900 text-white shadow-lg transition hover:scale-110 hover:bg-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+        className="float-btn fixed bottom-5 right-5 z-50 grid h-11 w-11 place-items-center rounded-full bg-neutral-900 text-white shadow-lg transition hover:scale-110 hover:bg-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
       >
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="4.5" r="1.8" />

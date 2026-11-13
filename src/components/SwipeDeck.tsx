@@ -199,8 +199,8 @@ export function SwipeDeck() {
   ];
   return (
     // Ancho atado al alto de la pantalla: filtros, carátula y botones caben sin bajar
-    <div className="mx-auto w-[clamp(13rem,calc((100dvh-28.5rem)*0.6667),24rem)] max-w-full select-none sm:w-[clamp(15rem,calc((100dvh-24rem)*0.6667),24rem)]">
-      <div className="relative left-1/2 mb-2 flex w-[max(100%,min(21rem,calc(100vw-2rem)))] -translate-x-1/2 items-center justify-between gap-2">
+    <div className="swipe-page mx-auto w-full select-none sm:w-[clamp(15rem,calc((100dvh-24rem)*0.6667),24rem)]">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex gap-1 rounded-full bg-neutral-200/70 p-1 dark:bg-neutral-800" role="radiogroup" aria-label={L ? "Type" : "Tipo"}>
           {kinds.map(([k, label]) => (
             <button
@@ -230,7 +230,7 @@ export function SwipeDeck() {
         ✓ {counts.visto} · ▶ {counts.viendo} · 📌 {counts.pendiente} · ✕ {counts.skip}
       </p>
 
-      <div className="relative aspect-[2/3] w-full">
+      <div className="relative h-[calc(100dvh-17.5rem)] max-h-[calc((100vw-2rem)*1.5)] min-h-[18rem] w-full sm:aspect-[2/3] sm:h-auto sm:max-h-none sm:min-h-0">
         {next?.poster_path && (
           <div className="absolute inset-0 translate-y-3 scale-[.94] overflow-hidden rounded-3xl opacity-60 shadow-lg" aria-hidden="true">
             <Image src={img(next.poster_path, "w500")!} alt="" fill sizes="384px" className="object-cover" />
@@ -252,7 +252,7 @@ export function SwipeDeck() {
         <AnimatePresence>{rateFor && <RatePanel title={rateFor.title} onRate={rate} L={L} />}</AnimatePresence>
       </div>
 
-      <div className="mt-4 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-2 sm:mt-4">
         <button type="button" disabled={locked || !!rateFor || !current} onClick={() => choose("skip")} className={`${btn} bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700`}>
           <span className="text-xl" aria-hidden="true">✕</span>
           {L ? "Not for me" : "No me interesa"}

@@ -32,7 +32,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="fixed bottom-[4.75rem] right-5 z-50 grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-neutral-900 text-white shadow-lg transition hover:scale-110 hover:bg-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+      className="float-btn fixed bottom-[4.75rem] right-5 z-50 grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-neutral-900 text-white shadow-lg transition hover:scale-110 hover:bg-neutral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
     >
       <AnimatePresence mode="wait" initial={false}>
         {dark !== null && (
