@@ -7,6 +7,8 @@ import { STATUSES, type Status } from "@/lib/dict";
 import type { ProfileStats } from "@/lib/profile";
 import { backfillTitleMeta } from "@/lib/backfill";
 import { Avatar } from "@/components/Avatar";
+import { BannerBg } from "@/components/BannerBg";
+import { BannerEditor } from "@/components/BannerEditor";
 import { FollowButton } from "@/components/FollowButton";
 import { RequestsPanel, type Person } from "@/components/RequestsPanel";
 import { ProfilePills } from "@/components/ProfilePills";
@@ -65,7 +67,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, bio, avatar_url, is_private")
+    .select("id, username, display_name, bio, avatar_url, is_private, banner")
     .eq("username", username)
     .maybeSingle();
 
@@ -192,9 +194,17 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   return (
     <div className="space-y-8">
       <Reveal>
-        <header className="flex flex-col items-center gap-5 rounded-3xl border border-neutral-200 bg-white p-6 text-center shadow-sm sm:flex-row sm:items-start sm:text-left dark:border-neutral-800 dark:bg-neutral-900">
-          <Avatar url={profile.avatar_url} size={112} className="shadow-md" />
-          <div className="min-w-0 flex-1 space-y-3">
+        <header className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+          {/* Banner elegido por la persona (color o imagen de una peli/serie) */}
+          <div className="relative h-28 overflow-hidden sm:h-40">
+            <BannerBg banner={profile.banner} username={profile.username!} sizes="1200px" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/40" aria-hidden="true" />
+          </div>
+          <div className="flex flex-col items-center gap-5 px-6 pb-6 text-center sm:flex-row sm:items-start sm:text-left">
+          <div className="relative z-10 -mt-14 shrink-0 rounded-full ring-4 ring-white sm:-mt-16 dark:ring-neutral-900">
+            <Avatar url={profile.avatar_url} size={112} className="shadow-md" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-3 sm:pt-4">
             <div>
               <h1 className="flex flex-wrap items-center justify-center gap-2 text-2xl font-extrabold sm:justify-start">
                 {name}
@@ -250,6 +260,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
                   {t("profile.edit")}
                 </Link>
                 <ShareProfile username={profile.username!} />
+                <BannerEditor current={profile.banner ?? null} username={profile.username!} displayName={profile.display_name} avatarUrl={profile.avatar_url} />
                 </>
               ) : (
                 <>
@@ -288,6 +299,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
               <ProfilePills items={[{ href: `${base}/listas`, label: t("lists.title"), Icon: ListIcon }]} />
             )
           )}
+          </div>
         </header>
       </Reveal>
 

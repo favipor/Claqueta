@@ -622,3 +622,19 @@ export async function getUpcomingMovies(lang: string, from: string, to: string):
     return [];
   }
 }
+
+// Imágenes de fondo (apaisadas) para el banner del perfil: búsqueda de pelis y series que tengan una
+export type BackdropHit = { id: number; media_type: MediaType; title: string; year: string; backdrop_path: string };
+export async function searchBackdrops(q: string, lang: string): Promise<BackdropHit[]> {
+  const data = await tmdb("/search/multi", lang, { query: q.slice(0, 80), include_adult: "false" });
+  return (data.results as any[])
+    .filter((r) => (r.media_type === "movie" || r.media_type === "tv") && r.backdrop_path)
+    .slice(0, 12)
+    .map((r) => ({
+      id: r.id,
+      media_type: r.media_type,
+      title: (r.media_type === "movie" ? r.title : r.name) ?? "",
+      year: ((r.media_type === "movie" ? r.release_date : r.first_air_date) ?? "").slice(0, 4),
+      backdrop_path: r.backdrop_path,
+    }));
+}

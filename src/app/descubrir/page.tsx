@@ -9,11 +9,10 @@ import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfile } from "@/components/ShareProfile";
 import { ScrollRow } from "@/components/ScrollRow";
+import { BannerBg } from "@/components/BannerBg";
 
 export const metadata = { title: "Descubrir" };
 
-// Degradado de la banda cuando no hay carátulas en común (cada persona tiene siempre el mismo)
-const BANDS = ["from-teal-500 to-cyan-700", "from-violet-500 to-indigo-700", "from-rose-500 to-orange-600", "from-amber-400 to-rose-600", "from-emerald-500 to-teal-800", "from-sky-500 to-indigo-700", "from-fuchsia-500 to-purple-800"];
 
 type Person = {
   id: string;
@@ -41,6 +40,9 @@ export default async function DiscoverPage() {
     supabase.rpc("discover_people", { p_limit: 48 }),
   ]);
   const people = (data ?? []) as Person[];
+  // Banner que cada persona ha elegido para su tarjeta
+  const { data: bannerRows } = people.length ? await supabase.from("profiles").select("id, banner").in("id", people.map((p) => p.id)) : { data: [] };
+  const banners = new Map((bannerRows ?? []).map((r) => [r.id as string, r.banner as string | null]));
   // Filas: muy afines, con títulos en común y el resto
   const taken = new Set<string>();
   const pick = (f: (p: Person) => boolean) => people.filter((p) => !taken.has(p.id) && f(p) && !!taken.add(p.id));
@@ -55,20 +57,26 @@ export default async function DiscoverPage() {
   const PersonCard = ({ p }: { p: Person }) => {
     const shared = (p.shared ?? []).filter((s) => s.poster_path).slice(0, 4);
     const extra = Math.max(0, p.shared_count - shared.length);
-    const hue = BANDS[[...p.username].reduce((a, c) => a + c.charCodeAt(0), 0) % BANDS.length];
     const aff = p.affinity ?? 0;
     return (
       <div className="group flex h-full w-72 shrink-0 snap-start flex-col overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-hover dark:border-neutral-800 dark:bg-neutral-900">
-        <div className={`relative h-24 shrink-0 overflow-hidden bg-gradient-to-br ${hue}`}>
-          {shared.length > 0 && (
-            <div className="absolute inset-0 flex scale-110 blur-[3px]" aria-hidden="true">
-              {shared.concat(shared).slice(0, 4).map((s, i) => (
-                <div key={i} className="relative h-full flex-1">
-                  <Image src={img(s.poster_path, "w185")!} alt="" fill sizes="80px" className="object-cover" />
+        <div className="relative h-24 shrink-0 overflow-hidden">
+          {/* El banner que eligió; si no eligió, vuestras carátulas en común difuminadas o un degradado */}
+          <BannerBg
+            banner={banners.get(p.id)}
+            username={p.username}
+            fallback={
+              shared.length > 0 ? (
+                <div className="absolute inset-0 flex scale-110 blur-[3px]">
+                  {shared.concat(shared).slice(0, 4).map((s, i) => (
+                    <div key={i} className="relative h-full flex-1">
+                      <Image src={img(s.poster_path, "w185")!} alt="" fill sizes="80px" className="object-cover" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              ) : null
+            }
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/55" aria-hidden="true" />
           {aff > 0 && (
             <span className="absolute right-3 top-3 rounded-full bg-black/45 px-2.5 py-1 text-xs font-bold text-white ring-1 ring-white/25 backdrop-blur-md" title={t("disc.affinityHint")}>
