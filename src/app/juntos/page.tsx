@@ -93,8 +93,8 @@ export default async function TogetherPage({ searchParams }: { searchParams: Pro
           {friend ? (
             <>
               <TogetherHero me={{ avatar_url: me?.avatar_url ?? null }} friend={friend} compat={compat} />
-              <PlansPanel key={friend.id} plans={plans} meId={user.id} friendName={friendName} />
-              <WatchTogether key={friend.id} items={items} friendName={friendName} friendAvatar={friend.avatar_url} friendId={friend.id} />
+              <PlansPanel key={`plans-${friend.id}`} plans={plans} meId={user.id} friendName={friendName} />
+              <WatchTogether key={`wt-${friend.id}`} items={items} friendName={friendName} friendAvatar={friend.avatar_url} friendId={friend.id} />
             </>
           ) : (
             // Sin amigo elegido: tarjetas grandes y de colores para escoger con quién
