@@ -9,31 +9,90 @@ import { img, type TmdbItem } from "@/lib/tmdb";
 import { setMyTitle } from "./MyTitles";
 import { useI18n } from "./I18nProvider";
 import { ClapperIcon } from "./ClapperIcon";
+import { startTour } from "./TourCoach";
 
-const GOAL = 10;
-type Choice = "seen" | "want" | "skip";
+const GOAL = 5;
+// Las mismas opciones que en cualquier ficha (más «no me interesa» para pasar a la siguiente)
+type Choice = "visto" | "viendo" | "pendiente" | "skip";
 
-// Visita guiada: pregunta inicial (sí / no) y tarjetas para marcar de un toque o deslizando
+// Hacia dónde sale cada tarjeta según lo elegido
+const OUT: Record<Choice, { x: number; y: number; rotate: number }> = {
+  visto: { x: 460, y: 0, rotate: 18 },
+  skip: { x: -460, y: 0, rotate: -18 },
+  pendiente: { x: 0, y: -560, rotate: 0 },
+  viendo: { x: 0, y: 560, rotate: 0 },
+};
+
+// Una tarjeta con su PROPIA posición: así la que sale y la que entra nunca se mezclan
+function SwipeCard({ item, onChoose, reduce, L }: { item: TmdbItem; onChoose: (c: Choice) => void; reduce: boolean; L: boolean }) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotate = useTransform(x, [-220, 220], [-14, 14]);
+  const seen = useTransform(x, [30, 140], [0, 1]);
+  const skip = useTransform(x, [-140, -30], [1, 0]);
+  const want = useTransform(y, [-140, -30], [1, 0]);
+  const watching = useTransform(y, [30, 140], [0, 1]);
+  const poster = img(item.poster_path, "w500");
+
+  function onDragEnd(_: unknown, info: PanInfo) {
+    if (info.offset.x > 110) onChoose("visto");
+    else if (info.offset.x < -110) onChoose("skip");
+    else if (info.offset.y < -110) onChoose("pendiente");
+    else if (info.offset.y > 110) onChoose("viendo");
+  }
+
+  return (
+    <motion.div
+      drag={!reduce}
+      dragSnapToOrigin
+      onDragEnd={onDragEnd}
+      style={{ x, y, rotate }}
+      initial={reduce ? false : { scale: 0.94, y: 14, opacity: 0.5 }}
+      animate={{ scale: 1, y: 0, opacity: 1 }}
+      // La dirección de salida llega por «custom» desde AnimatePresence (la tarjeta que sale ya no recibe props nuevas)
+      variants={{ out: (c: Choice) => (reduce ? { opacity: 0 } : { ...OUT[c ?? "skip"], opacity: 0, transition: { duration: 0.32, ease: "easeIn" } }) }}
+      exit="out"
+      className="absolute inset-0 cursor-grab overflow-hidden rounded-3xl bg-neutral-800 shadow-2xl active:cursor-grabbing"
+    >
+      {poster && <Image src={poster} alt={item.title} fill sizes="384px" priority className="pointer-events-none object-cover" />}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 pt-20 text-white">
+        <p className="text-2xl font-extrabold leading-tight drop-shadow">{item.title}</p>
+        <p className="mt-1 text-sm text-white/80">
+          {item.media_type === "movie" ? (L ? "Movie" : "Película") : L ? "Series" : "Serie"}
+          {item.year ? ` · ${item.year}` : ""}
+        </p>
+      </div>
+      <motion.span style={{ opacity: seen }} className="absolute left-5 top-6 -rotate-12 rounded-xl border-4 border-emerald-400 px-3 py-1 text-2xl font-black text-emerald-400">
+        {L ? "WATCHED" : "VISTO"}
+      </motion.span>
+      <motion.span style={{ opacity: skip }} className="absolute right-5 top-6 rotate-12 rounded-xl border-4 border-neutral-300 px-3 py-1 text-2xl font-black text-neutral-200">
+        {L ? "NOPE" : "PASO"}
+      </motion.span>
+      <motion.span style={{ opacity: want }} className="absolute inset-x-0 top-1/3 mx-auto w-max rounded-xl border-4 border-orange-400 px-3 py-1 text-2xl font-black text-orange-400">
+        {L ? "PENDING" : "PENDIENTE"}
+      </motion.span>
+      <motion.span style={{ opacity: watching }} className="absolute inset-x-0 top-1/3 mx-auto w-max rounded-xl border-4 border-amber-300 px-3 py-1 text-2xl font-black text-amber-300">
+        {L ? "WATCHING" : "VIENDO"}
+      </motion.span>
+    </motion.div>
+  );
+}
+
+// Visita guiada: pregunta inicial (sí / no), tarjetas para marcar 5 títulos y, al final, un recorrido por la web
 export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem[]; username: string | null; direct?: boolean }) {
   const { lang } = useI18n();
   const L = lang === "en";
   const router = useRouter();
-  const reduce = useReducedMotion();
+  const reduce = !!useReducedMotion();
   // Desde la Guía se entra directo a las tarjetas (ya has dicho que sí al pulsar el botón)
   const [stage, setStage] = useState<"ask" | "cards" | "done">(direct ? "cards" : "ask");
   const [i, setI] = useState(0);
   const [marked, setMarked] = useState(0);
-  const [exit, setExit] = useState<Choice>("skip");
+  const [exitTo, setExitTo] = useState<Choice>("skip");
   const [rateFor, setRateFor] = useState<TmdbItem | null>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotate = useTransform(x, [-220, 220], [-14, 14]);
-  const seenOpacity = useTransform(x, [30, 140], [0, 1]);
-  const skipOpacity = useTransform(x, [-140, -30], [1, 0]);
-  const wantOpacity = useTransform(y, [-140, -30], [1, 0]);
+  const [locked, setLocked] = useState(false);
 
   const current = pool[i];
-  const finish = useCallback(() => setStage("done"), []);
   const leave = () => {
     router.push(username ? `/u/${username}` : "/");
     router.refresh();
@@ -41,50 +100,50 @@ export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem
 
   const choose = useCallback(
     (c: Choice) => {
-      if (!current) return;
-      setExit(c);
+      // Bloqueo breve: un doble toque no puede marcar la tarjeta siguiente sin querer
+      if (!current || locked) return;
+      setLocked(true);
+      setTimeout(() => setLocked(false), 350);
+      setExitTo(c);
+      const item = current; // la tarjeta que se ve ahora, no la siguiente
       if (c !== "skip") {
-        const status = c === "seen" ? "visto" : "pendiente";
-        setMyTitle(current.media_type, current.id, { status });
-        updateEntry({ tmdb_id: current.id, media_type: current.media_type, title: current.title, poster_path: current.poster_path, patch: { status } }).catch(() => {});
-        setMarked((m) => m + 1);
-        if (c === "seen") setRateFor(current); // nota opcional, sin bloquear la siguiente tarjeta
+        setMyTitle(item.media_type, item.id, { status: c });
+        updateEntry({ tmdb_id: item.id, media_type: item.media_type, title: item.title, poster_path: item.poster_path, patch: { status: c } }).catch(() => {});
+        if (c === "visto") setRateFor(item);
+        setMarked((m) => {
+          const n = m + 1;
+          if (n >= GOAL) setTimeout(() => setStage("done"), 450);
+          return n;
+        });
       }
-      x.set(0);
-      y.set(0);
-      if (i + 1 >= pool.length) finish();
-      else setI(i + 1);
+      if (i + 1 >= pool.length) setTimeout(() => setStage("done"), 450);
+      setI((k) => k + 1);
     },
-    [current, i, pool.length, finish, x, y]
+    [current, locked, i, pool.length]
   );
 
   function rate(n: number) {
     if (!rateFor) return;
-    setMyTitle(rateFor.media_type, rateFor.id, { rating: n });
-    updateEntry({ tmdb_id: rateFor.id, media_type: rateFor.media_type, title: rateFor.title, poster_path: rateFor.poster_path, patch: { rating: n } }).catch(() => {});
+    const item = rateFor;
+    setMyTitle(item.media_type, item.id, { rating: n });
+    updateEntry({ tmdb_id: item.id, media_type: item.media_type, title: item.title, poster_path: item.poster_path, patch: { rating: n } }).catch(() => {});
     setRateFor(null);
   }
 
-  // Teclado: → la he visto, ↑ la quiero ver, ← no la he visto
+  // Teclado: → visto, ← paso, ↑ pendiente, ↓ viendo
   useEffect(() => {
     if (stage !== "cards") return;
     const on = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") choose("seen");
-      else if (e.key === "ArrowLeft") choose("skip");
-      else if (e.key === "ArrowUp") {
+      const map: Record<string, Choice> = { ArrowRight: "visto", ArrowLeft: "skip", ArrowUp: "pendiente", ArrowDown: "viendo" };
+      const c = map[e.key];
+      if (c) {
         e.preventDefault();
-        choose("want");
+        choose(c);
       }
     };
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
   }, [stage, choose]);
-
-  function onDragEnd(_: unknown, info: PanInfo) {
-    if (info.offset.x > 110) choose("seen");
-    else if (info.offset.x < -110) choose("skip");
-    else if (info.offset.y < -110) choose("want");
-  }
 
   // ---------- Pregunta inicial ----------
   if (stage === "ask") {
@@ -113,23 +172,15 @@ export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem
             <h1 className="text-2xl font-extrabold">{L ? "Want a quick guided start?" : "¿Quieres una visita guiada?"}</h1>
             <p className="mx-auto mt-2 max-w-sm text-neutral-600 dark:text-neutral-300">
               {L
-                ? "In one minute we'll mark a few movies and shows you already know, so your recommendations are spot on from day one."
-                : "En un minuto marcamos algunas pelis y series que ya conoces, para que tus recomendaciones acierten desde el primer día."}
+                ? "Mark 5 titles you know and we'll show you around the site in a minute."
+                : "Marca 5 títulos que conozcas y te enseño la web en un minuto."}
             </p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <button
-                type="button"
-                onClick={() => setStage("cards")}
-                className="rounded-xl bg-brand px-6 py-3 font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark"
-              >
+              <button type="button" onClick={() => setStage("cards")} className="rounded-xl bg-brand px-6 py-3 font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark">
                 {L ? "Yes, let's go!" : "¡Sí, vamos!"}
               </button>
-              <button
-                type="button"
-                onClick={leave}
-                className="rounded-xl px-6 py-3 font-semibold text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              >
-                {L ? "No thanks, I'll explore" : "No, gracias"}
+              <button type="button" onClick={leave} className="rounded-xl px-6 py-3 font-semibold text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800">
+                {L ? "No thanks" : "No, gracias"}
               </button>
             </div>
           </div>
@@ -138,120 +189,99 @@ export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem
     );
   }
 
-  // ---------- Final ----------
+  // ---------- Hecho: paso al recorrido ----------
   if (stage === "done" || !current) {
     return (
-      <div className="mx-auto max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl ring-1 ring-black/5 dark:bg-neutral-900 dark:ring-white/10">
-        <motion.div initial={reduce ? false : { scale: 0.4, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 200, damping: 12 }} className="text-6xl" aria-hidden="true">
-          🎉
-        </motion.div>
-        <h1 className="mt-4 text-2xl font-extrabold">{L ? "All set!" : "¡Listo!"}</h1>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-300">
-          {marked
-            ? L
-              ? `You've marked ${marked} titles. Your recommendations are ready.`
-              : `Has marcado ${marked} títulos. Tus recomendaciones ya están listas.`
-            : L
-              ? "You can mark titles anytime from any movie or show."
-              : "Puedes marcar títulos cuando quieras desde cualquier peli o serie."}
-        </p>
-        <div className="mt-6 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              router.push("/");
-              router.refresh();
-            }}
-            className="rounded-xl bg-brand px-6 py-3 font-bold text-white hover:bg-brand-dark"
-          >
-            {L ? "See my recommendations" : "Ver mis recomendaciones"} →
-          </button>
-          {username && (
-            <button type="button" onClick={leave} className="rounded-xl px-6 py-3 font-semibold text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800">
-              {L ? "Go to my profile" : "Ir a mi perfil"}
+      <div className="mx-auto max-w-md overflow-hidden rounded-3xl bg-white text-center shadow-2xl ring-1 ring-black/5 dark:bg-neutral-900 dark:ring-white/10">
+        <div className="bg-gradient-to-br from-teal-500 via-teal-700 to-neutral-950 px-8 pb-8 pt-10 text-white">
+          <motion.div initial={reduce ? false : { scale: 0.4, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 200, damping: 12 }} className="text-6xl" aria-hidden="true">
+            🎉
+          </motion.div>
+          <h1 className="mt-3 text-2xl font-extrabold">{L ? "Great start!" : "¡Genial!"}</h1>
+          <p className="mt-1 text-teal-50">
+            {marked ? (L ? `${marked} titles marked.` : `Has marcado ${marked} títulos.`) : L ? "You can mark titles anytime." : "Puedes marcar títulos cuando quieras."}
+          </p>
+        </div>
+        <div className="p-7">
+          <p className="font-semibold">{L ? "Now a 1-minute tour:" : "Ahora un recorrido de 1 minuto:"}</p>
+          <ol className="mx-auto mt-3 max-w-xs space-y-2 text-left text-sm text-neutral-600 dark:text-neutral-300">
+            {(L ? ["📚 Your list", "✨ Recommendations for you", "👥 Friends", "📅 Release calendar", "🏆 Your profile and achievements"] : ["📚 Tu lista", "✨ Recomendaciones para ti", "👥 Amigos", "📅 Calendario de estrenos", "🏆 Tu perfil y tus logros"]).map((s) => (
+              <li key={s} className="rounded-xl bg-neutral-100 px-3 py-2 dark:bg-neutral-800">
+                {s}
+              </li>
+            ))}
+          </ol>
+          <div className="mt-6 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                startTour(username);
+                router.push("/mi-lista");
+              }}
+              className="rounded-xl bg-brand px-6 py-3 font-bold text-white hover:bg-brand-dark"
+            >
+              {L ? "Start the tour" : "Empezar el recorrido"} →
             </button>
-          )}
+            <button type="button" onClick={leave} className="rounded-xl px-6 py-3 font-semibold text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800">
+              {L ? "Skip, I'll explore" : "Saltar, ya lo exploro yo"}
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   // ---------- Tarjetas ----------
-  const poster = img(current.poster_path, "w500");
   const next = pool[i + 1];
+  const btn = "flex flex-col items-center gap-1 rounded-2xl py-3 text-[11px] font-bold transition hover:-translate-y-0.5 disabled:opacity-60 sm:text-xs";
   return (
     <div className="mx-auto max-w-sm select-none">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex-1">
           <div className="flex justify-between text-xs font-semibold text-neutral-500">
             <span>{L ? `${marked} of ${GOAL} marked` : `${marked} de ${GOAL} marcados`}</span>
-            <span>{marked >= GOAL ? "🎯" : ""}</span>
           </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
-            <motion.div className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-500" animate={{ width: `${Math.min(100, (marked / GOAL) * 100)}%` }} />
+          <div className="mt-1.5 flex gap-1">
+            {Array.from({ length: GOAL }, (_, k) => (
+              <span key={k} className={`h-2 flex-1 rounded-full transition-colors duration-300 ${k < marked ? "bg-gradient-to-r from-teal-400 to-emerald-500" : "bg-neutral-200 dark:bg-neutral-800"}`} />
+            ))}
           </div>
         </div>
-        <button type="button" onClick={finish} className="rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white">
-          {marked >= GOAL ? (L ? "Finish" : "Terminar") : L ? "Skip" : "Saltar"}
+        <button type="button" onClick={() => setStage("done")} className="rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white">
+          {L ? "Skip" : "Saltar"}
         </button>
       </div>
 
       <div className="relative aspect-[2/3] w-full">
-        {/* La siguiente, asomando detrás */}
         {next?.poster_path && (
-          <div className="absolute inset-0 translate-y-3 scale-[.94] overflow-hidden rounded-3xl opacity-60 shadow-lg">
+          <div className="absolute inset-0 translate-y-3 scale-[.94] overflow-hidden rounded-3xl opacity-60 shadow-lg" aria-hidden="true">
             <Image src={img(next.poster_path, "w500")!} alt="" fill sizes="384px" className="object-cover" />
           </div>
         )}
-        <AnimatePresence mode="popLayout" custom={exit}>
-          <motion.div
-            key={current.id + current.media_type}
-            drag={!reduce}
-            dragSnapToOrigin
-            onDragEnd={onDragEnd}
-            style={{ x, y, rotate }}
-            initial={reduce ? false : { scale: 0.94, y: 12, opacity: 0.6 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={reduce ? { opacity: 0 } : { x: exit === "seen" ? 420 : exit === "skip" ? -420 : 0, y: exit === "want" ? -520 : 0, opacity: 0, rotate: exit === "seen" ? 18 : exit === "skip" ? -18 : 0, transition: { duration: 0.3 } }}
-            className="absolute inset-0 cursor-grab overflow-hidden rounded-3xl bg-neutral-800 shadow-2xl active:cursor-grabbing"
-          >
-            {poster && <Image src={poster} alt={current.title} fill sizes="384px" priority className="pointer-events-none object-cover" />}
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 pt-20 text-white">
-              <p className="text-2xl font-extrabold leading-tight drop-shadow">{current.title}</p>
-              <p className="mt-1 text-sm text-white/80">
-                {current.media_type === "movie" ? (L ? "Movie" : "Película") : L ? "Series" : "Serie"}
-                {current.year ? ` · ${current.year}` : ""}
-              </p>
-            </div>
-            {/* Sellos al deslizar */}
-            <motion.span style={{ opacity: seenOpacity }} className="absolute left-5 top-6 -rotate-12 rounded-xl border-4 border-emerald-400 px-3 py-1 text-2xl font-black text-emerald-400">
-              {L ? "SEEN" : "VISTA"}
-            </motion.span>
-            <motion.span style={{ opacity: skipOpacity }} className="absolute right-5 top-6 rotate-12 rounded-xl border-4 border-neutral-300 px-3 py-1 text-2xl font-black text-neutral-200">
-              {L ? "NOPE" : "NO"}
-            </motion.span>
-            <motion.span style={{ opacity: wantOpacity }} className="absolute inset-x-0 top-1/3 mx-auto w-max rounded-xl border-4 border-amber-400 px-3 py-1 text-2xl font-black text-amber-400">
-              {L ? "WANT IT" : "LA QUIERO VER"}
-            </motion.span>
-          </motion.div>
+        <AnimatePresence initial={false} custom={exitTo}>
+          <SwipeCard key={`${current.media_type}-${current.id}`} item={current} onChoose={choose} reduce={reduce} L={L} />
         </AnimatePresence>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <button type="button" onClick={() => choose("skip")} className="flex flex-col items-center gap-1 rounded-2xl bg-neutral-100 py-3 text-xs font-bold text-neutral-600 transition hover:-translate-y-0.5 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700">
-          <span className="text-2xl" aria-hidden="true">✕</span>
-          {L ? "Haven't seen" : "No la he visto"}
+      <div className="mt-5 grid grid-cols-4 gap-2">
+        <button type="button" disabled={locked} onClick={() => choose("skip")} className={`${btn} bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700`}>
+          <span className="text-xl" aria-hidden="true">✕</span>
+          {L ? "Not for me" : "No me interesa"}
         </button>
-        <button type="button" onClick={() => choose("want")} className="flex flex-col items-center gap-1 rounded-2xl bg-amber-100 py-3 text-xs font-bold text-amber-800 transition hover:-translate-y-0.5 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300">
-          <span className="text-2xl" aria-hidden="true">📌</span>
-          {L ? "Want to watch" : "Quiero verla"}
+        <button type="button" disabled={locked} onClick={() => choose("pendiente")} className={`${btn} bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/40 dark:text-orange-300`}>
+          <span className="text-xl" aria-hidden="true">📌</span>
+          {L ? "Pending" : "Pendiente"}
         </button>
-        <button type="button" onClick={() => choose("seen")} className="flex flex-col items-center gap-1 rounded-2xl bg-emerald-100 py-3 text-xs font-bold text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300">
-          <span className="text-2xl" aria-hidden="true">✓</span>
-          {L ? "I've seen it" : "La he visto"}
+        <button type="button" disabled={locked} onClick={() => choose("viendo")} className={`${btn} bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300`}>
+          <span className="text-xl" aria-hidden="true">▶</span>
+          {L ? "Watching" : "Viendo"}
+        </button>
+        <button type="button" disabled={locked} onClick={() => choose("visto")} className={`${btn} bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300`}>
+          <span className="text-xl" aria-hidden="true">✓</span>
+          {L ? "Watched" : "Visto"}
         </button>
       </div>
-      <p className="mt-3 hidden text-center text-xs text-neutral-500 sm:block">{L ? "Tip: swipe the card or use ← ↑ → keys" : "Truco: desliza la tarjeta o usa las teclas ← ↑ →"}</p>
+      <p className="mt-3 hidden text-center text-xs text-neutral-500 sm:block">{L ? "Tip: swipe the card or use the arrow keys" : "Truco: desliza la tarjeta (→ visto, ← paso, ↑ pendiente, ↓ viendo) o usa las flechas"}</p>
 
       {/* Nota rápida de lo que acabas de marcar como visto (opcional) */}
       <AnimatePresence>
@@ -260,7 +290,7 @@ export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-x-0 bottom-4 z-50 mx-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-neutral-950 p-4 text-white shadow-2xl ring-1 ring-white/15"
+            className="fixed inset-x-0 bottom-4 z-[96] mx-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-neutral-950 p-4 text-white shadow-2xl ring-1 ring-white/15"
           >
             <div className="flex items-center justify-between gap-2">
               <p className="truncate text-sm font-semibold">

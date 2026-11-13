@@ -56,7 +56,7 @@ export function ForYouRow({
     : [...liked, { key: res.source, title: res.because ?? "…", media_type: "movie" as const, tmdb_id: 0 }];
 
   return (
-    <section>
+    <section data-tour="parati">
       <div className="relative z-10 mb-1 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 className="min-w-0 text-xl font-bold">
           {t("recs.title")}

@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MyTitlesSync } from "@/components/MyTitles";
 import { Telemetry } from "@/components/Telemetry";
 import { AchievementWatcher } from "@/components/AchievementWatcher";
+import { TourCoach } from "@/components/TourCoach";
 import { Footer } from "@/components/Footer";
 import { Splash } from "@/components/Splash";
 import { I18nProvider } from "@/components/I18nProvider";
@@ -101,6 +102,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <MyTitlesSync />
           <Telemetry />
           <AchievementWatcher />
+          <TourCoach />
         </I18nProvider>
       </body>
     </html>
