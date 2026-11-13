@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { getT } from "@/lib/i18n-server";
 import type { DictKey } from "@/lib/dict";
 import { Avatar } from "./Avatar";
+import { FriendReactTile } from "./FriendReactTile";
 
 export type FriendEntry = {
   user_id: string;
@@ -12,15 +12,9 @@ export type FriendEntry = {
   rating: number | string | null;
 };
 
-const PILL: Record<string, string> = {
-  pendiente: "bg-orange-500",
-  viendo: "bg-amber-500",
-  visto: "bg-emerald-600",
-  volver_a_ver: "bg-sky-600",
-};
 
 // «Tus amigos»: qué han hecho con este título las personas a las que sigues
-export async function FriendsOnTitle({ friends }: { friends: FriendEntry[] }) {
+export async function FriendsOnTitle({ friends, meId, tmdbId, mediaType, myReactions }: { friends: FriendEntry[]; meId: string; tmdbId: number; mediaType: string; myReactions: Record<string, string> }) {
   const { t, lang } = await getT();
   const L = lang === "en";
   const rated = friends.filter((f) => f.rating !== null).map((f) => Number(f.rating));
@@ -69,29 +63,18 @@ export async function FriendsOnTitle({ friends }: { friends: FriendEntry[] }) {
       <ul className="mt-4 flex gap-3 overflow-x-auto pb-1 no-scrollbar">
         {friends.map((f) => (
           <li key={f.user_id} className="shrink-0">
-            <Link
-              href={`/u/${f.username}`}
-              className="flex w-28 flex-col items-center rounded-xl p-2 text-center transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <span className="relative">
-                <Avatar url={f.avatar_url} size={56} />
-                {f.rating !== null && (
-                  <span className="absolute -bottom-1 -right-2 inline-flex items-center gap-0.5 rounded-full bg-black/85 px-1.5 py-0.5 text-[11px] font-bold text-white ring-2 ring-white dark:ring-neutral-900">
-                    <span className="text-amber-400">★</span>
-                    {fmt(Number(f.rating))}
-                  </span>
-                )}
-              </span>
-              <span className="mt-2 w-full truncate text-sm font-semibold">{f.display_name ?? `@${f.username}`}</span>
-              {f.status && (
-                <span className={`mt-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${PILL[f.status] ?? "bg-neutral-500"}`}>
-                  {t(`status.${f.status}` as DictKey)}
-                </span>
-              )}
-            </Link>
+            <FriendReactTile
+              f={f}
+              tmdbId={tmdbId}
+              mediaType={mediaType}
+              meId={meId}
+              initial={myReactions[f.user_id] ?? null}
+              statusLabel={f.status ? t(`status.${f.status}` as DictKey) : null}
+            />
           </li>
         ))}
       </ul>
+      <p className="mt-2 text-[11px] text-neutral-400">{L ? "Tip: press and hold a friend to react" : "Truco: deja pulsado sobre un amigo para reaccionar"}</p>
     </section>
   );
 }

@@ -89,6 +89,7 @@ export default async function TitlePage({ params }: Props) {
   let viewer: Viewer | null = null;
   let friends: FriendEntry[] = [];
   let reactions: TitleReaction[] = [];
+  let myReactions: Record<string, string> = {};
 
   if (user) {
     const [mineRes, commRes, tvRes, profRes, blockRes, adminRes, friendsRes, reactRes] = await Promise.all([
@@ -128,6 +129,17 @@ export default async function TitlePage({ params }: Props) {
         .map(({ r, pr }) => ({ emoji: r.emoji as string, created_at: r.created_at as string, username: pr!.username as string, display_name: (pr!.display_name as string | null) ?? null, avatar_url: (pr!.avatar_url as string | null) ?? null }));
     }
     friends = ((friendsRes.data ?? []) as FriendEntry[]).filter((f) => f.username);
+    // Tus reacciones a lo que han marcado tus amigos de este título
+    if (friends.length) {
+      const { data: mr } = await supabase
+        .from("activity_reactions")
+        .select("owner_id, emoji")
+        .eq("reactor_id", user.id)
+        .eq("tmdb_id", p.id)
+        .eq("media_type", p.type)
+        .in("owner_id", friends.map((f) => f.user_id));
+      myReactions = Object.fromEntries((mr ?? []).map((r) => [r.owner_id as string, r.emoji as string]));
+    }
     const mine = mineRes.data;
     if (mine) {
       initial = {
@@ -260,7 +272,7 @@ export default async function TitlePage({ params }: Props) {
 
       {friends.length > 0 && (
         <Reveal>
-          <FriendsOnTitle friends={friends} />
+          <FriendsOnTitle friends={friends} meId={user!.id} tmdbId={d.id} mediaType={d.media_type} myReactions={myReactions} />
         </Reveal>
       )}
 
