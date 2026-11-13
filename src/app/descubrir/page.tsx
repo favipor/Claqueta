@@ -1,3 +1,4 @@
+import { FriendsTabs } from "@/components/FriendsTabs";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -39,6 +40,9 @@ export default async function DiscoverPage() {
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-end">
+        <FriendsTabs current="people" />
+      </div>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-extrabold">{t("disc.title")}</h1>

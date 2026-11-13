@@ -42,7 +42,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
     setError(null);
     const res = await completeOnboarding({ username, displayName, isPrivate });
     if (res.ok && res.username) {
-      router.push(`/u/${res.username}`);
+      router.push("/empezar");
       router.refresh();
       return;
     }

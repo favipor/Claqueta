@@ -17,6 +17,8 @@ import { StatsPanel } from "@/components/StatsPanel";
 import { TitleCard } from "@/components/TitleCard";
 import { Reveal } from "@/components/Reveal";
 import { CountUp } from "@/components/CountUp";
+import { AchievementsPanel } from "@/components/AchievementsPanel";
+import type { AchStats } from "@/lib/achievements";
 
 type Props = {
   params: Promise<{ username: string }>;
@@ -155,6 +157,7 @@ export default async function ProfilePage({ params, searchParams }: Props) {
   }
 
   let stats: ProfileStats | null = null;
+  let ach: AchStats | null = null;
   let titles: {
     tmdb_id: number;
     media_type: string;
@@ -164,10 +167,12 @@ export default async function ProfilePage({ params, searchParams }: Props) {
     rating: number | string | null;
   }[] = [];
   if (canView) {
-    const [s, tt] = await Promise.all([
+    const [s, tt, a] = await Promise.all([
       supabase.rpc("profile_stats", { p_user: profile.id }),
       supabase.rpc("profile_titles", { p_user: profile.id }),
+      supabase.rpc("achievement_stats", { p_user: profile.id }),
     ]);
+    ach = (a.data ?? null) as AchStats | null;
     stats = (s.data ?? null) as ProfileStats | null;
     titles = (tt.data ?? []) as typeof titles;
   }
@@ -322,6 +327,12 @@ export default async function ProfilePage({ params, searchParams }: Props) {
           {stats && (
             <Reveal>
               <StatsPanel stats={stats} />
+            </Reveal>
+          )}
+
+          {ach && (
+            <Reveal>
+              <AchievementsPanel stats={ach} own={isOwner} />
             </Reveal>
           )}
 

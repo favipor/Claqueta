@@ -17,6 +17,7 @@ function titleFor(type: string) {
     case "follow_accepted": return "✅ Solicitud aceptada";
     case "new_episode": return "📺 Capítulo nuevo";
     case "new_user": return "🆕 Nuevo registro";
+    case "reaction": return "🔥 Han reaccionado a lo tuyo";
     case "app_error": return "⚠️ Error en Claqueta";
     default: return "Claqueta";
   }
@@ -73,6 +74,10 @@ export async function POST(request: Request) {
     case "recommendation":
       body = `${who} ${t(`notif.${n.type}` as DictKey)}${titleName ? ` ${titleName}` : ""}`;
       url = actor?.username ? `/mensajes/${actor.username}` : "/mensajes";
+      break;
+    case "reaction":
+      body = `${who} ${t("notif.reaction")} ${titleName}`.trim();
+      url = "/actividad";
       break;
     case "reply":
     case "mention":

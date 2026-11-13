@@ -13,15 +13,31 @@ import { TitleCard } from "./TitleCard";
 
 // «Para ti» con su propia barra: elegir en qué basar las recomendaciones (mezcla de tus
 // favoritas, un título concreto o un género) o pedir una sorpresa al azar.
-export function ForYouRow({ kind, initial, liked }: { kind: CatalogKind; initial: RecsResult; liked: LikedTitle[] }) {
+const SWITCH =
+  "relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand-fg dark:bg-neutral-700 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5";
+
+export function ForYouRow({
+  kind,
+  initial,
+  liked,
+  hasProviders = false,
+  initialOnlyMine = false,
+}: {
+  kind: CatalogKind;
+  initial: RecsResult;
+  liked: LikedTitle[];
+  hasProviders?: boolean;
+  initialOnlyMine?: boolean;
+}) {
   const { t } = useI18n();
   const [res, setRes] = useState(initial);
   const [pending, start] = useTransition();
   const [spin, setSpin] = useState(0);
 
-  const run = (source: string) =>
+  const [onlyMine, setOnlyMine] = useState(initialOnlyMine);
+  const run = (source: string, mine = onlyMine) =>
     start(async () => {
-      const next = await loadRecs(kind, source);
+      const next = await loadRecs(kind, source, mine);
       setRes(next);
     });
 
@@ -46,8 +62,24 @@ export function ForYouRow({ kind, initial, liked }: { kind: CatalogKind; initial
           {t("recs.title")}
           {sub && <span className="font-semibold text-neutral-500 dark:text-neutral-400"> · {sub}</span>}
         </h2>
-        <div className="flex shrink-0 gap-2">
-          <FilterSelect label={t("recs.basedOn")} icon="spark" value={res.source} onChange={run} className="min-w-0 flex-1 md:w-64 md:flex-none">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {hasProviders && (
+            <label className="mr-1 flex cursor-pointer select-none items-center gap-2.5 text-sm font-semibold">
+              <span className="text-neutral-600 dark:text-neutral-300">{t("prov.onlyMine")}</span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={onlyMine}
+                onChange={(e) => {
+                  setOnlyMine(e.target.checked);
+                  run(res.source, e.target.checked);
+                }}
+                className="peer sr-only"
+              />
+              <span aria-hidden="true" className={SWITCH} />
+            </label>
+          )}
+          <FilterSelect label={t("recs.basedOn")} icon="spark" value={res.source} onChange={(v) => run(v)} className="min-w-0 flex-1 md:w-64 md:flex-none">
             <option value="mix">{t("recs.mix")}</option>
             {titles.length > 0 && (
               <optgroup label={t("recs.byTitle")}>

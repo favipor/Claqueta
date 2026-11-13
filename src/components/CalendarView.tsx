@@ -42,12 +42,16 @@ export function CalendarView({
   mode,
   cinema,
   events,
+  onlyMine = false,
+  hasProviders = false,
 }: {
   year: number;
   month: number;
   mode: CalMode;
   cinema: boolean;
   events: CalEvent[];
+  onlyMine?: boolean;
+  hasProviders?: boolean;
 }) {
   const { t, lang } = useI18n();
   const router = useRouter();
@@ -69,18 +73,21 @@ export function CalendarView({
     todayKey.startsWith(monthKey) ? todayKey : firstWithEvents ?? `${monthKey}-01`
   );
 
-  function go(next: { mes?: string; ver?: CalMode; cine?: boolean }) {
+  function go(next: { mes?: string; ver?: CalMode; cine?: boolean; prov?: boolean }) {
     const q = new URLSearchParams();
     const mes = next.mes ?? monthKey;
     const ver = next.ver ?? mode;
     const cine = next.cine ?? cinema;
+    const prov = next.prov ?? onlyMine;
     if (mes !== `${today.getFullYear()}-${pad(today.getMonth() + 1)}`) q.set("mes", mes);
     if (ver !== "ambos") q.set("ver", ver);
     if (cine && ver !== "visto") q.set("cine", "1");
+    if (prov && ver !== "visto") q.set("prov", "1");
     // Memoria: el filtro y el interruptor de cine (no el mes, que siempre empieza en el actual)
     const mem = new URLSearchParams();
     mem.set("ver", ver);
     mem.set("cine", cine ? "1" : "0");
+    mem.set("prov", prov ? "1" : "0");
     savePref(PREF_COOKIES.calendar, mem.toString());
     const s = q.toString();
     start(() => router.push(`/calendario${s ? `?${s}` : ""}`, { scroll: false }));
@@ -172,6 +179,13 @@ export function CalendarView({
               </button>
             )}
           </div>
+          {mode !== "visto" && hasProviders && (
+            <label className="flex cursor-pointer select-none items-center gap-2 text-sm font-semibold">
+              <span className="text-neutral-600 dark:text-neutral-300">{t("prov.onlyMine")}</span>
+              <input type="checkbox" role="switch" checked={onlyMine} onChange={(e) => go({ prov: e.target.checked })} className="peer sr-only" />
+              <span aria-hidden="true" className="relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand-fg dark:bg-neutral-700 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5" />
+            </label>
+          )}
           {mode !== "visto" && (
             <label className="flex cursor-pointer select-none items-center gap-2 text-sm font-semibold">
               <span className="text-neutral-600 dark:text-neutral-300">{t("cal.cinema")}</span>

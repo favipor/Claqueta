@@ -68,6 +68,8 @@ export function setMyTitle(type: string, id: number, patch: Partial<MyTitle>) {
   if (next.status === null && next.rating === null) map.delete(key);
   else map.set(key, next);
   listeners.forEach((l) => l());
+  // avisa a quien quiera reaccionar (p. ej. los logros)
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("claq:title-changed"));
 }
 
 // Recarga completa (tras acciones que pueden cambiar varios estados, como las reglas de las series)

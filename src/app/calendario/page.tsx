@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
-import { getAirSchedule, getUpcomingMovies, type AirItem, type MediaType } from "@/lib/tmdb";
+import { filterByProviders, getAirSchedule, getUpcomingMovies, type AirItem, type MediaType } from "@/lib/tmdb";
 import { CalendarView, type CalEvent, type CalMode } from "@/components/CalendarView";
 import { cookies } from "next/headers";
 import { PREF_COOKIES, withSavedPrefs } from "@/lib/prefs";
@@ -14,10 +14,10 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; ver?: string; cine?: string }>;
+  searchParams: Promise<{ mes?: string; ver?: string; cine?: string; prov?: string }>;
 }) {
   // Si no vienen filtros en la dirección, se usan los que dejaste la última vez
-  const sp = withSavedPrefs(await searchParams, (await cookies()).get(PREF_COOKIES.calendar)?.value, ["ver", "cine"]);
+  const sp = withSavedPrefs(await searchParams, (await cookies()).get(PREF_COOKIES.calendar)?.value, ["ver", "cine", "prov"]);
   const { lang } = await getT();
   const supabase = await createClient();
   const {
@@ -31,6 +31,9 @@ export default async function CalendarPage({
   const month = m ? Math.min(12, Math.max(1, Number(m[2]))) : now.getMonth() + 1;
   const mode: CalMode = sp.ver === "estrenos" || sp.ver === "visto" ? sp.ver : "ambos";
   const cinema = sp.cine === "1";
+  const { data: prof } = await supabase.from("profiles").select("providers").eq("id", user.id).maybeSingle();
+  const myProviders = ((prof?.providers as number[] | null) ?? []).filter(Number.isInteger);
+  const onlyMine = sp.prov === "1" && myProviders.length > 0;
   const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const from = `${year}-${pad(month)}-01`;
   const to = `${year}-${pad(month)}-${pad(last)}`;
@@ -118,9 +121,15 @@ export default async function CalendarPage({
         .order("updated_at", { ascending: false })
         .limit(40),
     ]);
+    // «Solo en mis plataformas»: se quitan los títulos que no están en ninguna de tus plataformas
+    type Row = { tmdb_id: number; media_type: MediaType };
+    let followed: Row[] = [
+      ...(series ?? []).map((s) => ({ tmdb_id: s.tmdb_id as number, media_type: "tv" as const })),
+      ...(movies ?? []).map((s) => ({ tmdb_id: s.tmdb_id as number, media_type: "movie" as const })),
+    ];
+    if (onlyMine) followed = await filterByProviders(followed, myProviders, (r) => r.tmdb_id);
     const lists = await Promise.all([
-      ...(series ?? []).map((s) => getAirSchedule("tv", s.tmdb_id as number, lang, from, to)),
-      ...(movies ?? []).map((s) => getAirSchedule("movie", s.tmdb_id as number, lang, from, to)),
+      ...followed.map((r) => getAirSchedule(r.media_type, r.tmdb_id, lang, from, to)),
       cinema ? getUpcomingMovies(lang, from, to) : Promise.resolve([] as AirItem[]),
     ]);
     const seen = new Set<string>();
@@ -134,5 +143,5 @@ export default async function CalendarPage({
 
   events.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 
-  return <CalendarView year={year} month={month} mode={mode} cinema={cinema} events={events} />;
+  return <CalendarView year={year} month={month} mode={mode} cinema={cinema} events={events} onlyMine={onlyMine} hasProviders={myProviders.length > 0} />;
 }

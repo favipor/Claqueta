@@ -11,6 +11,7 @@ import { Avatar } from "@/components/Avatar";
 import { CountUp } from "@/components/CountUp";
 import { Reveal } from "@/components/Reveal";
 import { ShareButton } from "@/components/ShareButton";
+import { StoryShare } from "@/components/StoryShare";
 import { YearMonths } from "@/components/YearMonths";
 
 type Props = { params: Promise<{ username: string; year: string }> };
@@ -215,6 +216,7 @@ export default async function YearPage({ params }: Props) {
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        {summary && <StoryShare url={`/u/${profile.username}/resumen/${year}/historia`} fileName={`claqueta-${year}.png`} />}
         <ShareButton title={`${isOwner ? t("year.titleMine") : t("year.titleOther")} ${year} · Claqueta`} text={`${hours} h ${t("year.shareText")}`} />
         <Link href={`/u/${profile.username}`} className="rounded-full bg-white/15 px-5 py-2.5 text-sm font-bold text-white hover:bg-white/25">
           {t("year.backProfile")}

@@ -12,6 +12,7 @@ import { fetchComments, type CommentPage } from "@/lib/comments";
 import { getT } from "@/lib/i18n-server";
 import { createClient } from "@/lib/supabase/server";
 import { TrackPanel } from "@/components/TrackPanel";
+import { FriendsOnTitle, type FriendEntry } from "@/components/FriendsOnTitle";
 import { AddToList } from "@/components/AddToList";
 import { UpcomingInfo } from "@/components/UpcomingInfo";
 import { ScrollRow } from "@/components/ScrollRow";
@@ -85,9 +86,10 @@ export default async function TitlePage({ params }: Props) {
   // Series: temporadas de TMDB + lo que el usuario lleva visto.
   let tv: { seasons: TvSeason[]; state: TvState } | null = null;
   let viewer: Viewer | null = null;
+  let friends: FriendEntry[] = [];
 
   if (user) {
-    const [mineRes, commRes, tvRes, profRes, blockRes, adminRes] = await Promise.all([
+    const [mineRes, commRes, tvRes, profRes, blockRes, adminRes, friendsRes] = await Promise.all([
       supabase
         .from("user_titles")
         .select("status, rating, private_note, watched_on")
@@ -104,7 +106,9 @@ export default async function TitlePage({ params }: Props) {
       supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
       supabase.from("comment_blocks").select("user_id").eq("user_id", user.id).maybeSingle(),
       supabase.rpc("is_admin"),
+      supabase.rpc("friends_on_title", { p_tmdb_id: p.id, p_media_type: p.type }),
     ]);
+    friends = ((friendsRes.data ?? []) as FriendEntry[]).filter((f) => f.username);
     const mine = mineRes.data;
     if (mine) {
       initial = {
@@ -233,6 +237,12 @@ export default async function TitlePage({ params }: Props) {
           </div>
         )}
       </Reveal>
+
+      {friends.length > 0 && (
+        <Reveal>
+          <FriendsOnTitle friends={friends} />
+        </Reveal>
+      )}
 
       {upcoming && (
         <Reveal>

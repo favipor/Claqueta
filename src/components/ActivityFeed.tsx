@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Reactions, type ReactionSummary } from "./Reactions";
 import { loadActivity, type ActivityRow } from "@/app/profile-actions";
 import { img } from "@/lib/tmdb";
 import type { DictKey } from "@/lib/dict";
@@ -24,6 +26,36 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
   const [rows, setRows] = useState(initial);
   const [done, setDone] = useState(initial.length < 30);
   const [pending, start] = useTransition();
+  const [me, setMe] = useState<string | null>(null);
+  const [reacts, setReacts] = useState<Record<string, ReactionSummary>>({});
+  const keyOf = (r: { user_id: string; tmdb_id: number; media_type: string }) => `${r.user_id}-${r.media_type}-${r.tmdb_id}`;
+
+  // Reacciones de las entradas que se ven (se cargan cada vez que llegan más)
+  useEffect(() => {
+    if (!rows.length) return;
+    const supabase = createClient();
+    (async () => {
+      const [{ data: auth }, { data }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+          .from("activity_reactions")
+          .select("reactor_id, owner_id, tmdb_id, media_type, emoji")
+          .in("owner_id", [...new Set(rows.map((r) => r.user_id))])
+          .in("tmdb_id", [...new Set(rows.map((r) => r.tmdb_id))])
+          .limit(2000),
+      ]);
+      const uid = auth.user?.id ?? null;
+      setMe(uid);
+      const out: Record<string, ReactionSummary> = {};
+      for (const x of data ?? []) {
+        const k = `${x.owner_id}-${x.media_type}-${x.tmdb_id}`;
+        const cur = (out[k] ??= { counts: {}, mine: null });
+        cur.counts[x.emoji] = (cur.counts[x.emoji] ?? 0) + 1;
+        if (x.reactor_id === uid) cur.mine = x.emoji;
+      }
+      setReacts(out);
+    })();
+  }, [rows]);
 
   if (rows.length === 0) {
     return (
@@ -86,6 +118,14 @@ export function ActivityFeed({ initial, myUsername }: { initial: ActivityRow[]; 
                   )}
                 </p>
                 <p className="mt-0.5 text-xs text-neutral-500">{ago(r.at, lang)}</p>
+                <Reactions
+                  ownerId={r.user_id}
+                  tmdbId={r.tmdb_id}
+                  mediaType={r.media_type}
+                  meId={me}
+                  value={reacts[keyOf(r)] ?? { counts: {}, mine: null }}
+                  onChange={(v) => setReacts((m) => ({ ...m, [keyOf(r)]: v }))}
+                />
               </div>
               <Link
                 href={`/titulo/${r.media_type}/${r.tmdb_id}`}

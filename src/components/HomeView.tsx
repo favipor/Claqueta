@@ -72,11 +72,17 @@ async function forYou(
   userId: string,
   kind: CatalogKind,
   lang: string
-): Promise<{ initial: RecsResult; liked: LikedTitle[] }> {
-  const saved = (await cookies()).get(`${RECS_COOKIE}_${kind}`)?.value ?? "mix";
-  const liked = await likedTitles(supabase, userId, kind);
-  const initial = await computeRecs(supabase, userId, kind, lang, saved, liked);
-  return { initial, liked };
+): Promise<{ initial: RecsResult; liked: LikedTitle[]; providers: number[]; onlyMine: boolean }> {
+  const jar = await cookies();
+  const saved = jar.get(`${RECS_COOKIE}_${kind}`)?.value ?? "mix";
+  const [liked, { data: prof }] = await Promise.all([
+    likedTitles(supabase, userId, kind),
+    supabase.from("profiles").select("providers").eq("id", userId).maybeSingle(),
+  ]);
+  const providers = ((prof?.providers as number[] | null) ?? []).filter(Number.isInteger);
+  const onlyMine = providers.length > 0 && jar.get(`${RECS_COOKIE}_prov`)?.value === "1";
+  const initial = await computeRecs(supabase, userId, kind, lang, saved, liked, onlyMine ? providers : []);
+  return { initial, liked, providers, onlyMine };
 }
 
 // Vista compartida por la portada (películas y series), /peliculas y /series:
@@ -149,7 +155,7 @@ export async function HomeView({ kind }: { kind: CatalogKind }) {
         </section>
       </Reveal>
 
-      {recs && (recs.liked.length > 0 || recs.initial.items.length > 0) && <ForYouRow kind={kind} initial={recs.initial} liked={recs.liked} />}
+      {recs && (recs.liked.length > 0 || recs.initial.items.length > 0) && <ForYouRow kind={kind} initial={recs.initial} liked={recs.liked} hasProviders={recs.providers.length > 0} initialOnlyMine={recs.onlyMine} />}
       <TrendingRow title={t("home.trendingToday")} items={day} />
       <TrendingRow title={t("home.trending")} items={week} />
 

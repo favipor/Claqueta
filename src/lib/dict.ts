@@ -688,6 +688,14 @@ const es = {
   "auth.saved": "¡Contraseña cambiada! Ya puedes seguir.",
   "auth.linkExpired": "El enlace ha caducado o ya se usó. Pide uno nuevo.",
   "auth.requestNew": "Pedir otro enlace",
+  "together.tab": "Juntos",
+  "together.title": "¿Qué vemos juntos?",
+  "together.subtitle": "Elige a un amigo y cruzamos vuestras listas de pendientes para encontrar algo que os apetezca a los dos.",
+  "together.pick": "¿Con quién?",
+  "together.choose": "Elige arriba a un amigo para ver lo que tenéis en común.",
+  "together.noFriends": "Necesitas amigos que te sigan y a los que sigas para usar esto.",
+  "notif.reaction": "ha reaccionado a lo que has marcado de",
+  "react.add": "Reaccionar",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1378,6 +1386,14 @@ const en: Record<keyof typeof es, string> = {
   "auth.saved": "Password changed! You're all set.",
   "auth.linkExpired": "The link has expired or was already used. Request a new one.",
   "auth.requestNew": "Request a new link",
+  "together.tab": "Together",
+  "together.title": "What shall we watch?",
+  "together.subtitle": "Pick a friend and we'll cross your watchlists to find something you'll both enjoy.",
+  "together.pick": "With whom?",
+  "together.choose": "Pick a friend above to see what you have in common.",
+  "together.noFriends": "You need friends who follow you back to use this.",
+  "notif.reaction": "reacted to your activity on",
+  "react.add": "React",
 };
 
 export type DictKey = keyof typeof es;

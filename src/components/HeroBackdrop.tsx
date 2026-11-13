@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { img } from "@/lib/tmdb";
 
 // Fondo de carátulas que se desplazan despacio (columnas que suben y bajan).
@@ -25,7 +24,12 @@ export function HeroBackdrop({ posters }: { posters: string[] }) {
             >
               {[...col, ...col].map((p, i) => (
                 <div key={i} className="relative mb-3 aspect-[2/3] w-full shrink-0 overflow-hidden rounded-lg">
-                  <Image src={img(p, "w342")!} alt="" fill sizes="(min-width: 1280px) 224px, 176px" className="object-cover" />
+                  {/* En el móvil basta con la versión pequeña (pesa unas 3 veces menos) */}
+                  <picture>
+                    <source media="(min-width: 640px)" srcSet={img(p, "w342")!} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img(p, "w185")!} alt="" loading={i < 3 ? "eager" : "lazy"} decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                  </picture>
                 </div>
               ))}
             </div>

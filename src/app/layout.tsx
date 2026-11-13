@@ -8,6 +8,7 @@ import { ScrollTop } from "@/components/ScrollTop";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MyTitlesSync } from "@/components/MyTitles";
 import { Telemetry } from "@/components/Telemetry";
+import { AchievementWatcher } from "@/components/AchievementWatcher";
 import { Footer } from "@/components/Footer";
 import { Splash } from "@/components/Splash";
 import { I18nProvider } from "@/components/I18nProvider";
@@ -99,6 +100,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <A11yPanel />
           <MyTitlesSync />
           <Telemetry />
+          <AchievementWatcher />
         </I18nProvider>
       </body>
     </html>

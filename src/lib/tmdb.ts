@@ -234,6 +234,25 @@ export async function getProviders(lang: string): Promise<Provider[]> {
     .map(({ id, name, logo_path }) => ({ id, name, logo_path }));
 }
 
+// Plataformas (ids) donde se puede ver un título en España incluido en la suscripción, gratis o con anuncios
+export async function titleProviderIds(type: MediaType, id: number): Promise<number[]> {
+  try {
+    const data: any = await tmdb(`/${type}/${id}/watch/providers`, "es");
+    const r = data.results?.[PROVIDER_REGION] ?? {};
+    return [...(r.flatrate ?? []), ...(r.free ?? []), ...(r.ads ?? [])].map((p: any) => p.provider_id as number);
+  } catch {
+    return [];
+  }
+}
+
+/** Deja solo los títulos que están en alguna de tus plataformas */
+export async function filterByProviders<T extends { media_type: MediaType }>(items: T[], providers: number[], idOf: (t: T) => number): Promise<T[]> {
+  if (!providers.length) return items;
+  const mine = new Set(providers);
+  const ok = await Promise.all(items.map(async (it) => (await titleProviderIds(it.media_type, idOf(it))).some((p) => mine.has(p))));
+  return items.filter((_, i) => ok[i]);
+}
+
 async function discoverOne(type: MediaType, sort: SortKey, page: number, lang: string, genre?: GenreKey, providers?: number[]) {
   const today = new Date().toISOString().slice(0, 10);
   const params: Record<string, string> = {

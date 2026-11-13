@@ -189,3 +189,24 @@ html.a11y-motion .install-shine,
 html.a11y-motion .clap-stick {
   animation: none !important;
 }
+
+/* Aviso de logro: entra desde arriba con rebote y lanza un destello */
+@keyframes ach-in {
+  0% { opacity: 0; transform: translateY(-30px) scale(.9); }
+  60% { opacity: 1; transform: translateY(4px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes ach-burst {
+  0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, .9); }
+  100% { box-shadow: 0 0 0 26px rgba(251, 191, 36, 0); }
+}
+.ach-toast { animation: ach-in .6s cubic-bezier(.2, .9, .3, 1.3) both; }
+.ach-burst { animation: ach-burst 1.2s ease-out .3s 2; }
+@media (prefers-reduced-motion: reduce) {
+  .ach-toast, .ach-burst { animation: none; }
+}
+
+/* Selector de reacciones: cada emoji aparece con un pequeño salto */
+@keyframes react-pop { 0% { opacity: 0; transform: translateY(6px) scale(.6); } 100% { opacity: 1; transform: none; } }
+.react-pop { animation: react-pop .25s cubic-bezier(.2, .9, .3, 1.4) both; }
+@media (prefers-reduced-motion: reduce) { .react-pop { animation: none; } }

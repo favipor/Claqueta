@@ -1,5 +1,5 @@
 import "server-only";
-import { getDiscover, getRelated, type CatalogKind, type MediaType, type TmdbItem } from "./tmdb";
+import { filterByProviders, getDiscover, getRelated, type CatalogKind, type MediaType, type TmdbItem } from "./tmdb";
 import { genresForKind, isGenreKey, type GenreKey } from "./genre-filter";
 import type { createClient } from "./supabase/server";
 
@@ -48,8 +48,11 @@ export async function computeRecs(
   kind: CatalogKind,
   lang: string,
   source: string,
-  liked?: LikedTitle[]
+  liked?: LikedTitle[],
+  providers: number[] = [] // «solo en mis plataformas»: si hay, se filtra por ellas
 ): Promise<RecsResult> {
+  // Con filtro de plataformas se buscan más candidatos, porque muchos se caen
+  const finish = async (list: TmdbItem[]) => (providers.length ? (await filterByProviders(list.slice(0, 40), providers, (x) => x.id)).slice(0, 16) : list.slice(0, 16));
   try {
     const [likes, have] = await Promise.all([liked ? Promise.resolve(liked) : likedTitles(supabase, userId, kind), myKeys(supabase, userId)]);
     const fresh = (it: TmdbItem) => !have.has(`${it.media_type}-${it.id}`) && (kind === "all" || it.media_type === kind);
@@ -66,7 +69,7 @@ export async function computeRecs(
       const [, type, id] = source.split(":");
       const seed = likes.find((l) => l.key === source);
       if ((type === "movie" || type === "tv") && Number(id) > 0) {
-        const items = (await getRelated(type, Number(id), lang)).filter(fresh).slice(0, 16);
+        const items = await finish((await getRelated(type, Number(id), lang)).filter(fresh));
         if (items.length) return { items, source, because: seed?.title ?? null };
       }
       source = "mix";
@@ -78,8 +81,8 @@ export async function computeRecs(
         // Varias páginas al azar de lo más popular del género, sin lo que ya tienes en tu lista
         const page = 1 + Math.floor(Math.random() * 3);
         const [a, b] = await Promise.all([
-          getDiscover(kind, "popularity", page, lang, g as GenreKey),
-          getDiscover(kind, "rating", page, lang, g as GenreKey),
+          getDiscover(kind, "popularity", providers.length ? 1 : page, lang, g as GenreKey, providers),
+          getDiscover(kind, "rating", providers.length ? 1 : page, lang, g as GenreKey, providers),
         ]);
         const seen = new Set<string>();
         const items = [...a.items, ...b.items]
@@ -106,7 +109,7 @@ export async function computeRecs(
         score.set(k, cur);
       })
     );
-    const items = [...score.values()].sort((a, b) => b.n - a.n).map((x) => x.item).slice(0, 16);
+    const items = await finish([...score.values()].sort((a, b) => b.n - a.n).map((x) => x.item));
     return { items, source: "mix", because: null };
   } catch {
     return { items: [], source: "mix", because: null };
