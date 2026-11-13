@@ -101,18 +101,11 @@ export function GuidedStart({ pool: initialPool, username, direct = false }: { p
     router.refresh();
   };
 
-  const choose = useCallback(
+  // Pasa a la siguiente tarjeta (y al final, al recorrido)
+  const advance = useCallback(
     (c: Choice) => {
-      // Bloqueo breve: un doble toque no puede marcar la tarjeta siguiente sin querer
-      if (!current || locked) return;
-      setLocked(true);
-      setTimeout(() => setLocked(false), 350);
       setExitTo(c);
-      const item = current; // la tarjeta que se ve ahora, no la siguiente
       if (c !== "skip") {
-        setMyTitle(item.media_type, item.id, { status: c });
-        updateEntry({ tmdb_id: item.id, media_type: item.media_type, title: item.title, poster_path: item.poster_path, patch: { status: c } }).catch(() => {});
-        if (c === "visto") setRateFor(item);
         setMarked((m) => {
           const n = m + 1;
           if (n >= GOAL) setTimeout(() => setStage("done"), 450);
@@ -122,7 +115,26 @@ export function GuidedStart({ pool: initialPool, username, direct = false }: { p
       if (i + 1 >= pool.length) setTimeout(() => setStage("done"), 450);
       setI((k) => k + 1);
     },
-    [current, locked, i, pool.length]
+    [i, pool.length]
+  );
+
+  const choose = useCallback(
+    (c: Choice) => {
+      // Bloqueo breve: un doble toque no puede marcar la tarjeta siguiente sin querer.
+      // Mientras se puntúa una «vista» no se puede pasar a otra.
+      if (!current || locked || rateFor) return;
+      setLocked(true);
+      setTimeout(() => setLocked(false), 350);
+      const item = current; // la tarjeta que se ve ahora, no la siguiente
+      if (c !== "skip") {
+        setMyTitle(item.media_type, item.id, { status: c });
+        updateEntry({ tmdb_id: item.id, media_type: item.media_type, title: item.title, poster_path: item.poster_path, patch: { status: c } }).catch(() => {});
+      }
+      // Si la has visto, primero la nota: la tarjeta se queda hasta que puntúes
+      if (c === "visto") setRateFor(item);
+      else advance(c);
+    },
+    [current, locked, rateFor, advance]
   );
 
   function rate(n: number) {
@@ -131,6 +143,9 @@ export function GuidedStart({ pool: initialPool, username, direct = false }: { p
     setMyTitle(item.media_type, item.id, { rating: n });
     updateEntry({ tmdb_id: item.id, media_type: item.media_type, title: item.title, poster_path: item.poster_path, patch: { rating: n } }).catch(() => {});
     setRateFor(null);
+    setLocked(true);
+    setTimeout(() => setLocked(false), 350);
+    advance("visto");
   }
 
   // Teclado: → visto, ← paso, ↑ pendiente, ↓ viendo
@@ -236,7 +251,7 @@ export function GuidedStart({ pool: initialPool, username, direct = false }: { p
 
   // ---------- Tarjetas ----------
   const next = pool[i + 1];
-  const btn = "flex flex-col items-center gap-1 rounded-2xl py-3 text-[11px] font-bold transition hover:-translate-y-0.5 disabled:opacity-60 sm:text-xs";
+  const btn = "flex flex-col items-center gap-1 rounded-2xl py-3 text-[11px] font-bold transition hover:-translate-y-0.5 disabled:opacity-40 sm:text-xs";
   return (
     <div className="mx-auto max-w-sm select-none">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -262,57 +277,55 @@ export function GuidedStart({ pool: initialPool, username, direct = false }: { p
           </div>
         )}
         <AnimatePresence initial={false} custom={exitTo}>
-          <SwipeCard key={`${current.media_type}-${current.id}`} item={current} onChoose={choose} reduce={reduce} L={L} />
+          <SwipeCard key={`${current.media_type}-${current.id}`} item={current} onChoose={choose} reduce={reduce || !!rateFor} L={L} />
+        </AnimatePresence>
+        {/* Nota obligatoria de lo que acabas de marcar como visto: no se pasa hasta puntuar */}
+        <AnimatePresence>
+          {rateFor && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              role="dialog"
+              aria-label={L ? "Rate it" : "Puntúala"}
+              className="absolute inset-x-3 bottom-3 z-10 rounded-2xl bg-neutral-950/95 p-4 text-white shadow-2xl ring-2 ring-amber-400/80 backdrop-blur"
+            >
+              <p className="text-sm font-semibold">
+                {L ? "Rate" : "¿Qué nota le das a"} <b>{rateFor.title}</b>?
+              </p>
+              <p className="text-xs text-white/60">{L ? "Pick a score to continue" : "Elige una nota para seguir"}</p>
+              <div className="mt-2 grid grid-cols-10 gap-1">
+                {Array.from({ length: 10 }, (_, k) => k + 1).map((n) => (
+                  <button key={n} type="button" onClick={() => rate(n)} className="rounded-lg bg-white/10 py-2 text-sm font-bold transition hover:scale-110 hover:bg-amber-400 hover:text-amber-950">
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-2">
-        <button type="button" disabled={locked} onClick={() => choose("skip")} className={`${btn} bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700`}>
+        <button type="button" disabled={locked || !!rateFor} onClick={() => choose("skip")} className={`${btn} bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700`}>
           <span className="text-xl" aria-hidden="true">✕</span>
           {L ? "Not for me" : "No me interesa"}
         </button>
-        <button type="button" disabled={locked} onClick={() => choose("pendiente")} className={`${btn} bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/40 dark:text-orange-300`}>
+        <button type="button" disabled={locked || !!rateFor} onClick={() => choose("pendiente")} className={`${btn} bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/40 dark:text-orange-300`}>
           <span className="text-xl" aria-hidden="true">📌</span>
           {L ? "Pending" : "Pendiente"}
         </button>
-        <button type="button" disabled={locked} onClick={() => choose("viendo")} className={`${btn} bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300`}>
+        <button type="button" disabled={locked || !!rateFor} onClick={() => choose("viendo")} className={`${btn} bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300`}>
           <span className="text-xl" aria-hidden="true">▶</span>
           {L ? "Watching" : "Viendo"}
         </button>
-        <button type="button" disabled={locked} onClick={() => choose("visto")} className={`${btn} bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300`}>
+        <button type="button" disabled={locked || !!rateFor} onClick={() => choose("visto")} className={`${btn} bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300`}>
           <span className="text-xl" aria-hidden="true">✓</span>
           {L ? "Watched" : "Visto"}
         </button>
       </div>
       <p className="mt-3 hidden text-center text-xs text-neutral-500 sm:block">{L ? "Tip: swipe the card or use the arrow keys" : "Truco: desliza la tarjeta (→ visto, ← paso, ↑ pendiente, ↓ viendo) o usa las flechas"}</p>
 
-      {/* Nota rápida de lo que acabas de marcar como visto (opcional) */}
-      <AnimatePresence>
-        {rateFor && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed inset-x-0 bottom-4 z-[96] mx-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl bg-neutral-950 p-4 text-white shadow-2xl ring-1 ring-white/15"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-sm font-semibold">
-                {L ? "Rate" : "¿Qué nota le das a"} <b>{rateFor.title}</b>?
-              </p>
-              <button type="button" onClick={() => setRateFor(null)} className="shrink-0 text-xs text-white/60 hover:text-white">
-                {L ? "Later" : "Luego"}
-              </button>
-            </div>
-            <div className="mt-2 grid grid-cols-10 gap-1">
-              {Array.from({ length: 10 }, (_, k) => k + 1).map((n) => (
-                <button key={n} type="button" onClick={() => rate(n)} className="rounded-lg bg-white/10 py-1.5 text-sm font-bold transition hover:scale-110 hover:bg-amber-400 hover:text-amber-950">
-                  {n}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
