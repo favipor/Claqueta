@@ -13,6 +13,7 @@ import { getT } from "@/lib/i18n-server";
 import { createClient } from "@/lib/supabase/server";
 import { TrackPanel } from "@/components/TrackPanel";
 import { FriendsOnTitle, type FriendEntry } from "@/components/FriendsOnTitle";
+import { TitleReactions, type TitleReaction } from "@/components/TitleReactions";
 import { AddToList } from "@/components/AddToList";
 import { UpcomingInfo } from "@/components/UpcomingInfo";
 import { ScrollRow } from "@/components/ScrollRow";
@@ -87,9 +88,10 @@ export default async function TitlePage({ params }: Props) {
   let tv: { seasons: TvSeason[]; state: TvState } | null = null;
   let viewer: Viewer | null = null;
   let friends: FriendEntry[] = [];
+  let reactions: TitleReaction[] = [];
 
   if (user) {
-    const [mineRes, commRes, tvRes, profRes, blockRes, adminRes, friendsRes] = await Promise.all([
+    const [mineRes, commRes, tvRes, profRes, blockRes, adminRes, friendsRes, reactRes] = await Promise.all([
       supabase
         .from("user_titles")
         .select("status, rating, private_note, watched_on")
@@ -107,7 +109,24 @@ export default async function TitlePage({ params }: Props) {
       supabase.from("comment_blocks").select("user_id").eq("user_id", user.id).maybeSingle(),
       supabase.rpc("is_admin"),
       supabase.rpc("friends_on_title", { p_tmdb_id: p.id, p_media_type: p.type }),
+      supabase
+        .from("activity_reactions")
+        .select("reactor_id, emoji, created_at")
+        .eq("owner_id", user.id)
+        .eq("tmdb_id", p.id)
+        .eq("media_type", p.type)
+        .order("created_at", { ascending: false }),
     ]);
+    // Quién ha reaccionado a lo que marcaste de este título
+    const rx = reactRes.data ?? [];
+    if (rx.length) {
+      const { data: people } = await supabase.from("profiles").select("id, username, display_name, avatar_url").in("id", rx.map((r) => r.reactor_id));
+      const byId = new Map((people ?? []).map((x) => [x.id as string, x]));
+      reactions = rx
+        .map((r) => ({ r, pr: byId.get(r.reactor_id as string) }))
+        .filter(({ pr }) => pr?.username)
+        .map(({ r, pr }) => ({ emoji: r.emoji as string, created_at: r.created_at as string, username: pr!.username as string, display_name: (pr!.display_name as string | null) ?? null, avatar_url: (pr!.avatar_url as string | null) ?? null }));
+    }
     friends = ((friendsRes.data ?? []) as FriendEntry[]).filter((f) => f.username);
     const mine = mineRes.data;
     if (mine) {
@@ -138,6 +157,7 @@ export default async function TitlePage({ params }: Props) {
       <Reveal>
         <div className="relative overflow-hidden rounded-3xl bg-neutral-900">
           {backdrop && <ParallaxBackdrop src={backdrop} />}
+          <TitleReactions reactions={reactions} />
           <div className="relative flex flex-col gap-6 p-6 text-white sm:flex-row sm:p-10">
             <div className="relative mx-auto aspect-[2/3] w-44 shrink-0 overflow-hidden rounded-xl shadow-2xl sm:mx-0 sm:w-56">
               {poster ? (

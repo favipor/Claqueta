@@ -697,6 +697,9 @@ const es = {
   "notif.reaction": "ha reaccionado a lo que has marcado de",
   "react.add": "Reaccionar",
   "rec.search": "Buscar amigo…",
+  "disc.rowAffinity": "Muy afines a ti",
+  "disc.rowShared": "Con títulos en común",
+  "disc.rowMore": "Más gente en Claqueta",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1396,6 +1399,9 @@ const en: Record<keyof typeof es, string> = {
   "notif.reaction": "reacted to your activity on",
   "react.add": "React",
   "rec.search": "Search friend…",
+  "disc.rowAffinity": "Very much your taste",
+  "disc.rowShared": "With titles in common",
+  "disc.rowMore": "More people on Claqueta",
 };
 
 export type DictKey = keyof typeof es;

@@ -569,15 +569,39 @@ export async function getAirSchedule(type: MediaType, id: number, lang: string, 
 }
 
 // Próximos estrenos de cine en España (para quien quiera verlos en el calendario)
+// Estrenos en cines de España de un periodo: se buscan las películas con estreno en sala en España
+// (tipo 3, o 2 = limitado) y se usa la fecha española de cada una, no la del estreno mundial.
+async function spainTheatricalDate(id: number): Promise<string | null> {
+  try {
+    const data: any = await tmdb(`/movie/${id}/release_dates`, "es");
+    const es = (data.results ?? []).find((r: any) => r.iso_3166_1 === "ES");
+    const dates = (es?.release_dates ?? []).filter((d: any) => d.type === 3 || d.type === 2).map((d: any) => String(d.release_date).slice(0, 10)).sort();
+    return dates[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getUpcomingMovies(lang: string, from: string, to: string): Promise<AirItem[]> {
   try {
-    const pages = await Promise.all([1, 2].map((page) => tmdb("/movie/upcoming", lang, { region: "ES", page: String(page) })));
+    const params = {
+      region: "ES",
+      with_release_type: "3|2",
+      "release_date.gte": from,
+      "release_date.lte": to,
+      sort_by: "popularity.desc",
+      include_adult: "false",
+    };
+    const first: any = await tmdb("/discover/movie", lang, { ...params, page: "1" });
+    const more = Math.min(Number(first.total_pages) || 1, 3);
+    const rest = await Promise.all(Array.from({ length: more - 1 }, (_, k) => tmdb("/discover/movie", lang, { ...params, page: String(k + 2) }).catch(() => ({ results: [] }))));
     const seen = new Set<number>();
-    return pages
-      .flatMap((p: any) => p.results ?? [])
-      .filter((r: any) => r.release_date && r.release_date >= from && r.release_date <= to && r.poster_path && !seen.has(r.id) && seen.add(r.id))
-      .map((r: any) => ({
-        date: r.release_date,
+    const movies = [first, ...rest].flatMap((p: any) => p.results ?? []).filter((r: any) => r.poster_path && !seen.has(r.id) && seen.add(r.id));
+    const withDates = await Promise.all(movies.map(async (r: any) => ({ r, date: await spainTheatricalDate(r.id) })));
+    return withDates
+      .filter(({ date }) => date && date >= from && date <= to)
+      .map(({ r, date }) => ({
+        date: date!,
         tmdb_id: r.id,
         media_type: "movie" as const,
         title: r.title,

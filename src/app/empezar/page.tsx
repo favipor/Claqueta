@@ -8,7 +8,8 @@ export const metadata = { title: "Empieza", robots: { index: false } };
 
 // Arranque guiado tras registrarse: primero pregunta si quieres la visita (puedes decir que no)
 // y, si quieres, enseña títulos muy conocidos para marcarlos de un toque.
-export default async function StartPage() {
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ directo?: string }> }) {
+  const { directo } = await searchParams;
   const { lang } = await getT();
   const supabase = await createClient();
   const {
@@ -39,5 +40,5 @@ export default async function StartPage() {
       pool.push(it);
     }
   }
-  return <GuidedStart pool={pool.slice(0, 40)} username={prof.data?.username ?? null} />;
+  return <GuidedStart pool={pool.slice(0, 40)} username={prof.data?.username ?? null} direct={directo === "1"} />;
 }

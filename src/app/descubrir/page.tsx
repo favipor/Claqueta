@@ -8,6 +8,7 @@ import { img } from "@/lib/tmdb";
 import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfile } from "@/components/ShareProfile";
+import { ScrollRow } from "@/components/ScrollRow";
 
 export const metadata = { title: "Descubrir" };
 
@@ -37,32 +38,19 @@ export default async function DiscoverPage() {
     supabase.rpc("discover_people", { p_limit: 48 }),
   ]);
   const people = (data ?? []) as Person[];
+  // Filas: muy afines, con títulos en común y el resto
+  const taken = new Set<string>();
+  const pick = (f: (p: Person) => boolean) => people.filter((p) => !taken.has(p.id) && f(p) && !!taken.add(p.id));
+  const groups = [
+    { id: "afines", icon: "💘", title: t("disc.rowAffinity"), people: pick((p) => (p.affinity ?? 0) >= 50) },
+    { id: "comun", icon: "🍿", title: t("disc.rowShared"), people: pick((p) => p.shared_count > 0) },
+    { id: "resto", icon: "✨", title: t("disc.rowMore"), people: pick(() => true) },
+  ];
 
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-end">
-        <FriendsTabs current="people" />
-      </div>
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-extrabold">{t("disc.title")}</h1>
-          <p className="max-w-xl text-sm text-neutral-500">{t("disc.subtitle")}</p>
-        </div>
-        {me?.username && <ShareProfile username={me.username} />}
-      </header>
-
-      {error ? (
-        <p className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-neutral-500 dark:border-neutral-700">
-          {t("disc.error")}
-        </p>
-      ) : people.length === 0 ? (
-        <p className="py-14 text-center text-neutral-500">{t("disc.empty")}</p>
-      ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {people.map((p) => (
-            <li
-              key={p.id}
-              className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-hover dark:border-neutral-800 dark:bg-neutral-900"
+  // Tarjeta de cada persona
+  const PersonCard = ({ p }: { p: Person }) => (
+    <div
+              className="flex h-full w-72 shrink-0 snap-start flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-hover dark:border-neutral-800 dark:bg-neutral-900"
             >
               <div className="flex items-center gap-3">
                 <Link href={`/u/${p.username}`} className="shrink-0">
@@ -117,9 +105,47 @@ export default async function DiscoverPage() {
               <div className="mt-auto pt-1">
                 <FollowButton targetId={p.id} initial={p.rel} loggedIn />
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-end">
+        <FriendsTabs current="people" />
+      </div>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-extrabold">{t("disc.title")}</h1>
+          <p className="max-w-xl text-sm text-neutral-500">{t("disc.subtitle")}</p>
+        </div>
+        {me?.username && <ShareProfile username={me.username} />}
+      </header>
+
+      {error ? (
+        <p className="rounded-2xl border border-dashed border-neutral-300 p-8 text-center text-neutral-500 dark:border-neutral-700">
+          {t("disc.error")}
+        </p>
+      ) : people.length === 0 ? (
+        <p className="py-14 text-center text-neutral-500">{t("disc.empty")}</p>
+      ) : (
+        <div className="space-y-10">
+          {groups.map((g) =>
+            g.people.length ? (
+              <section key={g.id}>
+                <h2 className="mb-1 flex items-center gap-2 text-xl font-bold">
+                  <span aria-hidden="true">{g.icon}</span>
+                  {g.title}
+                  <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{g.people.length}</span>
+                </h2>
+                <ScrollRow label={g.title}>
+                  {g.people.map((p) => (
+                    <PersonCard key={p.id} p={p} />
+                  ))}
+                </ScrollRow>
+              </section>
+            ) : null
+          )}
+        </div>
       )}
     </div>
   );

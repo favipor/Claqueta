@@ -29,7 +29,17 @@ export default async function GuidePage() {
       <header className="space-y-4 rounded-3xl bg-gradient-to-br from-teal-700 to-teal-950 p-6 text-white sm:p-9">
         <h1 className="text-3xl font-extrabold sm:text-4xl">{t("guide.link")}</h1>
         <p className="max-w-2xl text-teal-50">{guide.intro}</p>
-        <GuideVideoButton />
+        <div className="flex flex-wrap gap-3">
+          <GuideVideoButton />
+          {/* La visita guiada también se puede hacer más tarde, aunque se saltara al registrarse */}
+          <Link
+            href="/empezar?directo=1"
+            className="inline-flex items-center gap-2.5 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-teal-900 shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <span aria-hidden="true">🧭</span>
+            {lang === "es" ? "Hacer la visita guiada" : "Take the guided tour"}
+          </Link>
+        </div>
       </header>
       <div className="grid items-start gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <nav id="indice" aria-label={guide.contents} className="scroll-mt-32 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">

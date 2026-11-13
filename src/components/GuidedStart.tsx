@@ -14,12 +14,13 @@ const GOAL = 10;
 type Choice = "seen" | "want" | "skip";
 
 // Visita guiada: pregunta inicial (sí / no) y tarjetas para marcar de un toque o deslizando
-export function GuidedStart({ pool, username }: { pool: TmdbItem[]; username: string | null }) {
+export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem[]; username: string | null; direct?: boolean }) {
   const { lang } = useI18n();
   const L = lang === "en";
   const router = useRouter();
   const reduce = useReducedMotion();
-  const [stage, setStage] = useState<"ask" | "cards" | "done">("ask");
+  // Desde la Guía se entra directo a las tarjetas (ya has dicho que sí al pulsar el botón)
+  const [stage, setStage] = useState<"ask" | "cards" | "done">(direct ? "cards" : "ask");
   const [i, setI] = useState(0);
   const [marked, setMarked] = useState(0);
   const [exit, setExit] = useState<Choice>("skip");

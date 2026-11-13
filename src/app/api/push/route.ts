@@ -77,7 +77,7 @@ export async function POST(request: Request) {
       break;
     case "reaction":
       body = `${who} ${t("notif.reaction")} ${titleName}`.trim();
-      url = "/actividad";
+      url = n.tmdb_id && n.media_type ? `${titleUrl}?reacciones=1` : "/notificaciones";
       break;
     case "reply":
     case "mention":

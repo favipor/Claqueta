@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n-server";
 import { FriendsTabs } from "@/components/FriendsTabs";
-import { Avatar } from "@/components/Avatar";
+import { FriendPicker } from "@/components/FriendPicker";
 import { WatchTogether, type TogetherItem } from "@/components/WatchTogether";
 
 export const metadata = { title: "¿Qué vemos juntos?", robots: { index: false } };
@@ -53,28 +53,7 @@ export default async function TogetherPage({ searchParams }: { searchParams: Pro
         <>
           <section aria-label={t("together.pick")}>
             <p className="mb-2 text-sm font-semibold text-neutral-600 dark:text-neutral-300">{t("together.pick")}</p>
-            <ul className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-1">
-              {friends.map((f) => {
-                const on = f.username === friend?.username;
-                return (
-                  <li key={f.id} className="shrink-0">
-                    <Link
-                      href={`/juntos?con=${f.username}`}
-                      scroll={false}
-                      aria-current={on ? "true" : undefined}
-                      className={`flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-4 text-sm font-semibold ring-1 transition ${
-                        on
-                          ? "bg-brand text-white ring-brand"
-                          : "bg-white ring-neutral-200 hover:ring-brand-fg dark:bg-neutral-900 dark:ring-neutral-700"
-                      }`}
-                    >
-                      <Avatar url={f.avatar_url} size={30} />
-                      {f.display_name ?? `@${f.username}`}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <FriendPicker friends={friends} current={friend?.username ?? null} />
           </section>
           {friend ? (
             <WatchTogether key={friend.id} items={items} friendName={friend.display_name ?? `@${friend.username}`} friendAvatar={friend.avatar_url} />
