@@ -118,6 +118,7 @@ export default async function MyListPage({
   }
 
 
+  const seg = "inline-flex items-center gap-1.5 px-3 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:px-3.5 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white";
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -128,32 +129,35 @@ export default async function MyListPage({
           <Link
             href="/desliza"
             title={uiLang === "en" ? "Mark titles by swiping posters" : "Marca títulos deslizando carátulas"}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 px-3.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-brand-fg/10 px-3.5 text-sm font-bold text-brand-fg ring-1 ring-inset ring-brand-fg/35 transition hover:-translate-y-0.5 hover:bg-brand-fg/15"
           >
             <SwipeIcon className="h-4 w-4" />
             {uiLang === "en" ? "Swipe" : "Desliza"}
           </Link>
-          <Link
-            href="/importar"
-            title={t("imp.link")}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-800 shadow-sm transition hover:-translate-y-0.5 hover:bg-neutral-50 sm:px-3.5 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 15V3M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
-            </svg>
-            <span className="sr-only sm:not-sr-only">{t("imp.link")}</span>
-          </Link>
-          <a
-            href="/api/exportar"
-            download
-            title={t("list.export")}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-brand px-3 text-sm font-semibold text-white sm:px-3.5 shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-hover"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 3v12M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
-            </svg>
-            <span className="sr-only sm:not-sr-only">{t("list.export")}</span>
-          </a>
+          {/* Tus datos: importar y exportar juntos, en neutro */}
+          <div className="inline-flex h-10 shrink-0 divide-x divide-neutral-300 overflow-hidden rounded-xl border border-neutral-300 bg-white shadow-sm dark:divide-neutral-700 dark:border-neutral-700 dark:bg-neutral-900">
+            <Link
+              href="/importar"
+              title={t("imp.link")}
+              className={seg}
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 15V3M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+              </svg>
+              <span className="sr-only sm:not-sr-only">{t("imp.link")}</span>
+            </Link>
+            <a
+              href="/api/exportar"
+              download
+              title={t("list.export")}
+              className={seg}
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+              </svg>
+              <span className="sr-only sm:not-sr-only">{t("list.export")}</span>
+            </a>
+          </div>
         </div>
       </div>
 

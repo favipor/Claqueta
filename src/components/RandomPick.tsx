@@ -95,7 +95,7 @@ export function RandomPick() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3.5 text-sm font-bold text-white sm:flex-none shadow-md transition hover:-translate-y-0.5 hover:shadow-hover"
+        className="group inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-3.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-dark hover:shadow-hover sm:flex-none"
       >
         <DiceIcon className="h-4 w-4 transition-transform duration-500 group-hover:rotate-[200deg]" />
         {t("pick.button")}
