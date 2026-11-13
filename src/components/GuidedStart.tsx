@@ -79,7 +79,10 @@ function SwipeCard({ item, onChoose, reduce, L }: { item: TmdbItem; onChoose: (c
 }
 
 // Visita guiada: pregunta inicial (sí / no), tarjetas para marcar 5 títulos y, al final, un recorrido por la web
-export function GuidedStart({ pool, username, direct = false }: { pool: TmdbItem[]; username: string | null; direct?: boolean }) {
+export function GuidedStart({ pool: initialPool, username, direct = false }: { pool: TmdbItem[]; username: string | null; direct?: boolean }) {
+  // La lista se congela al entrar: al guardar, el servidor refresca la página y quita lo ya marcado,
+  // y eso desplazaba el índice una tarjeta (se saltaba una película)
+  const [pool] = useState(initialPool);
   const { lang } = useI18n();
   const L = lang === "en";
   const router = useRouter();
