@@ -707,6 +707,7 @@ const es = {
   "together.retos": "Retos",
   "disc.bothHave": "Los dos tenéis",
   "disc.andMore": "y {n} más",
+  "pick.synopsis": "¿De qué va?",
 } as const;
 
 const en: Record<keyof typeof es, string> = {
@@ -1416,6 +1417,7 @@ const en: Record<keyof typeof es, string> = {
   "together.retos": "Challenges",
   "disc.bothHave": "You both have",
   "disc.andMore": "and {n} more",
+  "pick.synopsis": "What is it about?",
 };
 
 export type DictKey = keyof typeof es;

@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { img, type MediaType } from "@/lib/tmdb";
 import { useI18n } from "./I18nProvider";
 import { FilmIcon, TvIcon } from "./NavIcons";
+import { SynopsisSheet } from "./SynopsisSheet";
 
 type Pending = {
   tmdb_id: number;
@@ -34,6 +35,8 @@ export function RandomPick() {
   const [length, setLength] = useState<Length>("any");
   const [pick, setPick] = useState<Pending | null>(null);
   const [spin, setSpin] = useState(0);
+  const [sheet, setSheet] = useState<Pending | null>(null);
+  const closeSheet = useCallback(() => setSheet(null), []);
 
   useEffect(() => setMounted(true), []);
 
@@ -100,6 +103,8 @@ export function RandomPick() {
         <DiceIcon className="h-4 w-4 transition-transform duration-500 group-hover:rotate-[200deg]" />
         {t("pick.button")}
       </button>
+
+      <SynopsisSheet item={sheet ? { id: sheet.tmdb_id, media_type: sheet.media_type, title: sheet.title, poster_path: sheet.poster_path } : null} onClose={closeSheet} />
 
       {mounted &&
         createPortal(
@@ -213,9 +218,18 @@ export function RandomPick() {
                           transition={{ duration: 0.3 }}
                           className="flex w-full flex-col items-center p-4 text-center"
                         >
-                          <div className="relative aspect-[2/3] w-40 overflow-hidden rounded-xl bg-neutral-300 shadow-xl dark:bg-neutral-700">
-                            {poster && <Image src={poster} alt={pick.title} fill sizes="160px" className="object-cover" />}
-                          </div>
+                          {/* Al tocar la carátula sale la sinopsis, como en Desliza */}
+                          <button
+                            type="button"
+                            onClick={() => setSheet(pick)}
+                            aria-label={`${pick.title}: ${t("pick.synopsis")}`}
+                            className="group relative aspect-[2/3] w-40 overflow-hidden rounded-xl bg-neutral-300 shadow-xl transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-fg dark:bg-neutral-700"
+                          >
+                            {poster && <Image src={poster} alt="" fill sizes="160px" className="object-cover" />}
+                            <span className="absolute inset-x-2 bottom-2 rounded-full bg-black/60 py-1 text-[11px] font-bold text-white backdrop-blur-sm transition group-hover:bg-black/75">
+                              ⓘ {t("pick.synopsis")}
+                            </span>
+                          </button>
                           <p className="mt-3 line-clamp-2 text-lg font-extrabold">{pick.title}</p>
                           <p className="text-xs text-neutral-500">
                             {t(`kind.${pick.media_type}` as const)}

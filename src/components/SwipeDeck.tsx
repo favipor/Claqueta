@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { updateEntry } from "@/app/actions";
-import { loadSwipe, swipeInfo, type SwipeInfo } from "@/app/swipe-actions";
+import { loadSwipe } from "@/app/swipe-actions";
 import { img, type TmdbItem } from "@/lib/tmdb";
 import type { SwipeKind } from "@/lib/swipe";
 import { setMyTitle } from "./MyTitles";
 import { useI18n } from "./I18nProvider";
 import { SwipeCard, RatePanel, type Choice } from "./SwipeCard";
+import { SynopsisSheet } from "./SynopsisSheet";
 
 type Counts = Record<Choice, number>;
 const ZERO: Counts = { visto: 0, viendo: 0, pendiente: 0, skip: 0 };
@@ -32,8 +33,7 @@ export function SwipeDeck() {
   const [loading, setLoading] = useState(false);
   const [empty, setEmpty] = useState(false);
   const [finished, setFinished] = useState(false);
-  const [sheet, setSheet] = useState<{ item: TmdbItem; info: SwipeInfo | null | "loading" } | null>(null);
-  const infoCache = useRef(new Map<string, SwipeInfo | null>());
+  const [sheet, setSheet] = useState<TmdbItem | null>(null);
   const shown = useRef(new Set<string>());
   const gen = useRef(0); // para descartar lotes de un filtro anterior
 
@@ -68,24 +68,7 @@ export function SwipeDeck() {
 
   const current = deck[i];
 
-  async function openInfo(item: TmdbItem) {
-    const k = key(item);
-    if (infoCache.current.has(k)) return setSheet({ item, info: infoCache.current.get(k)! });
-    setSheet({ item, info: "loading" });
-    const info = await swipeInfo(item.media_type, item.id).catch(() => null);
-    infoCache.current.set(k, info);
-    setSheet((s) => (s && key(s.item) === k ? { item, info } : s));
-  }
-
-  // Cerrar la hoja con Escape
-  useEffect(() => {
-    if (!sheet) return;
-    const on = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSheet(null);
-    };
-    window.addEventListener("keydown", on);
-    return () => window.removeEventListener("keydown", on);
-  }, [sheet]);
+  const closeSheet = useCallback(() => setSheet(null), []);
 
   const advance = useCallback((c: Choice) => {
     setExitTo(c);
@@ -190,7 +173,6 @@ export function SwipeDeck() {
 
   // ---------- Tarjetas ----------
   const next = deck[i + 1];
-  const info = sheet && sheet.info !== "loading" ? sheet.info : null;
   const btn = "flex flex-col items-center gap-1 rounded-2xl py-3 text-[11px] font-bold transition hover:-translate-y-0.5 disabled:opacity-40 sm:text-xs";
   const kinds: [SwipeKind, string][] = [
     ["all", L ? "All" : "Todo"],
@@ -260,9 +242,9 @@ export function SwipeDeck() {
             dragElastic={{ top: 0.5, bottom: 0 }}
             dragSnapToOrigin
             onDragEnd={(_, info) => {
-              if (info.offset.y < -25) openInfo(current);
+              if (info.offset.y < -25) setSheet(current);
             }}
-            onClick={() => openInfo(current)}
+            onClick={() => setSheet(current)}
             initial={reduce ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -299,92 +281,8 @@ export function SwipeDeck() {
       </div>
       <p className="mt-2 hidden text-center text-xs text-neutral-500 sm:block">{L ? "Pull up “What's it about?” for the synopsis · swipe or use the arrow keys" : "Tira de «¿De qué va?» para ver la sinopsis · desliza o usa las flechas"}</p>
 
-      {/* Hoja con la sinopsis al tocar la carátula (se cierra tocando fuera, arrastrando hacia abajo o con Escape) */}
-      <AnimatePresence>
-        {sheet && (
-          <>
-            <motion.div key="bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[94] bg-black/55" onClick={() => setSheet(null)} aria-hidden="true" />
-            <motion.div
-              key="sheet"
-              role="dialog"
-              aria-modal="true"
-              aria-label={sheet.item.title}
-              initial={reduce ? { opacity: 0 } : { y: "100%" }}
-              animate={reduce ? { opacity: 1 } : { y: 0 }}
-              exit={reduce ? { opacity: 0 } : { y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 320 }}
-              drag={reduce ? false : "y"}
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.6 }}
-              onDragEnd={(_, info) => {
-                if (info.offset.y > 90) setSheet(null);
-              }}
-              className="fixed inset-x-0 bottom-0 z-[95] mx-auto max-h-[75dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 pb-8 shadow-2xl dark:bg-neutral-900"
-            >
-              <span className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-neutral-300 dark:bg-neutral-700" aria-hidden="true" />
-              <div className="flex gap-4">
-                {sheet.item.poster_path && (
-                  <span className="relative h-32 w-[5.4rem] shrink-0 overflow-hidden rounded-xl shadow-md">
-                    <Image src={img(sheet.item.poster_path, "w185")!} alt="" fill sizes="88px" className="object-cover" />
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-extrabold leading-tight">{sheet.item.title}</h2>
-                  <p className="mt-1 text-sm text-neutral-500">
-                    {sheet.item.media_type === "movie" ? (L ? "Movie" : "Película") : L ? "Series" : "Serie"}
-                    {sheet.item.year ? ` · ${sheet.item.year}` : ""}
-                    {info && info.runtime && sheet.item.media_type === "movie" ? ` · ${info.runtime} min` : ""}
-                    {info && info.seasons ? ` · ${info.seasons} ${L ? (info.seasons === 1 ? "season" : "seasons") : info.seasons === 1 ? "temporada" : "temporadas"}` : ""}
-                  </p>
-                  {info && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      {info.vote > 0 && (
-                        <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-xs font-bold text-white dark:bg-white dark:text-neutral-900">
-                          <span className="text-amber-400 dark:text-amber-500">★</span> {info.vote.toLocaleString(lang, { maximumFractionDigits: 1 })}
-                        </span>
-                      )}
-                      {info.genres.map((g) => (
-                        <span key={g} className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                          {g}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {sheet.info === "loading" ? (
-                <div className="mt-4 space-y-2" aria-label={L ? "Loading" : "Cargando"}>
-                  {[100, 92, 70].map((w) => (
-                    <span key={w} className="block h-3 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" style={{ width: `${w}%` }} />
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">{info?.overview || (L ? "No synopsis available yet." : "Todavía no hay sinopsis disponible.")}</p>
-              )}
-              {info && info.providers.length > 0 && (
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="text-xs font-semibold text-neutral-500">{L ? "Streaming on" : "Disponible en"}</span>
-                  {info.providers.map((pr) =>
-                    pr.logo_path ? (
-                      <span key={pr.name} title={pr.name} className="relative h-7 w-7 overflow-hidden rounded-lg">
-                        <Image src={img(pr.logo_path, "w92")!} alt={pr.name} fill sizes="28px" className="object-cover" />
-                      </span>
-                    ) : null
-                  )}
-                </div>
-              )}
-              <div className="mt-5 flex gap-2">
-                <button type="button" onClick={() => setSheet(null)} className="flex-1 rounded-xl bg-brand py-3 text-sm font-bold text-white hover:bg-brand-dark">
-                  {L ? "Back to the cards" : "Volver a las carátulas"}
-                </button>
-                <Link href={`/titulo/${sheet.item.media_type}/${sheet.item.id}`} className="rounded-xl px-4 py-3 text-sm font-semibold text-neutral-600 ring-1 ring-inset ring-neutral-300 hover:bg-neutral-100 dark:text-neutral-300 dark:ring-neutral-700 dark:hover:bg-neutral-800">
-                  {L ? "Full page" : "Ver ficha"}
-                </Link>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Hoja con la sinopsis */}
+      <SynopsisSheet item={sheet} onClose={closeSheet} />
     </div>
   );
 }
